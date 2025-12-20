@@ -10,7 +10,7 @@ class ResultPicker(object):
             result_tensor = torch.zeros(0)
             result_structure = []
             for res in result:
-                
+
                 #### for sd 3 ###
                 if res==None:
                     res = result[1]
@@ -22,7 +22,7 @@ class ResultPicker(object):
                 result_tensor = result_tensor.to(res_tensor.device, dtype=res_tensor.dtype)
                 result_structure.append(res_structure)
             return result_tensor, result_structure
-        
+
     @staticmethod
     def load(tensor, tensor_structure):
         if isinstance(tensor_structure, torch.Size):
@@ -45,7 +45,7 @@ class ResultPicker(object):
                     else:
                         results.append(result)
             return tuple(results)  # Return the reconstructed tuple
-        
+
     @staticmethod
     def get_result_structure(result):
         if isinstance(result, torch.Tensor):

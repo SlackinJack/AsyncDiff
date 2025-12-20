@@ -16,7 +16,7 @@ class ModulePlugin(object):
         self.warmup_n = warmup_n
         self.result_structure, self.cached_result = None, None
         self.infer_step = 0
-    
+
     def cache_sync(self, async_flag):
         if self.infer_step >= self.warmup_n:
             dist.broadcast(self.cached_result, self.model_i, async_op=async_flag)
@@ -25,9 +25,9 @@ class ModulePlugin(object):
         assert not hasattr(self.module, 'old_forward'), "Module already has old_forward attribute."
         module = self.module
         module.old_forward = module.forward
-        
+
         def new_forward(*args, **kwargs):
-        
+
             run_locally = (self.run_mode[0]==self.model_i) and ((self.infer_step-1)%self.stride==0)
 
             if self.infer_step<self.warmup_n or run_locally:
@@ -38,22 +38,23 @@ class ModulePlugin(object):
                 result = ResultPicker.load(self.cached_result, self.result_structure)
             self.infer_step += 1
             return result
-        
-        
+
+
         module.forward = new_forward
 
 class AsyncDiff(object):
-    def __init__(self, pipeline, model_n=2, stride=1, warm_up=1, time_shift=False):
-        dist.init_process_group("nccl")
+    def __init__(self, pipeline, pipeline_type, model_n=2, stride=1, warm_up=1, time_shift=False):
+        from datetime import timedelta
+        dist.init_process_group("nccl", timeout=timedelta(days=1))
         if not dist.get_rank(): assert model_n + stride - 1 == dist.get_world_size(), "[ERROR]: The strategy is not compatible with the number of devices. (model_n + stride - 1) should be equal to world_size."
-        assert stride==1 or stride==2, "[ERROR]: The stride should be set as 1 or 2"
+        # assert stride==1 or stride==2, "[ERROR]: The stride should be set as 1 or 2"
         self.model_n = model_n
         self.stride = stride
         self.warm_up = warm_up
         self.time_shift = time_shift
         self.pipeline = pipeline.to(f"cuda:{dist.get_rank()}")
         torch.cuda.set_device(f"cuda:{dist.get_rank()}")
-        self.pipe_id = pipeline.config._name_or_path
+        self.pipe_id = pipeline_type
         self.reformed_modules = {}
         self.reform_pipeline()
 
@@ -66,7 +67,7 @@ class AsyncDiff(object):
         run_mode = (dist.get_rank(), 0) if dist.get_rank() < self.model_n else (self.model_n -1, 1)
         ModulePlugin(module, model_i, self.stride, run_mode)
         self.reformed_modules[(model_i, module_id)] = module
-    
+
     def reform_unet(self):
         unet = self.pipeline.unet
         assert not hasattr(unet, 'old_forward'), "Unet already has old_forward attribute."
@@ -75,7 +76,7 @@ class AsyncDiff(object):
         def unet_forward(*args, **kwargs):
 
             # return unet.old_forward(*args, **kwargs)
-        
+
             infer_step = self.reformed_modules[(0, 0)].plugin.infer_step
 
             if self.stride==1:
@@ -113,7 +114,7 @@ class AsyncDiff(object):
                 infer_step = self.reformed_modules[(0, 0)].plugin.infer_step
                 if infer_step>=self.warm_up and (infer_step-1)%self.stride == 1:
                     dist.broadcast(sample, self.model_n)
-    
+
                 return sample,
 
         unet.forward = unet_forward

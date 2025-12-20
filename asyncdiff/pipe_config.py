@@ -1,10 +1,10 @@
 def splite_model(pipe, pipe_id, n):
-    if pipe_id == "stabilityai/stable-diffusion-3-medium-diffusers":
+    if pipe_id == "sd3":
         transformer = pipe.transformer
     else:
         unet = pipe.unet
 
-    if pipe_id == "stabilityai/stable-video-diffusion-img2vid-xt":
+    if pipe_id == "svd":
         if n == 2:
             return [
                 (
@@ -74,7 +74,7 @@ def splite_model(pipe, pipe_id, n):
             ]
         else:
             raise NotImplementedError
-    elif pipe_id == "stabilityai/stable-diffusion-2-1":
+    elif pipe_id == "sd2":
         if n == 2:
             return [(
                 unet.conv_in,
@@ -134,7 +134,7 @@ def splite_model(pipe, pipe_id, n):
             )]
         else:
             raise NotImplementedError
-    elif pipe_id == "runwayml/stable-diffusion-v1-5": 
+    elif pipe_id == "sd1":
         if n == 2:
             return [(
                 unet.conv_in,
@@ -201,7 +201,7 @@ def splite_model(pipe, pipe_id, n):
             )]
         else:
             raise NotImplementedError
-    elif pipe_id == "stabilityai/stable-diffusion-xl-base-1.0" or pipe_id == "RunDiffusion/Juggernaut-X-v10" or pipe_id == "diffusers/stable-diffusion-xl-1.0-inpainting-0.1": 
+    elif pipe_id == "sdxl":
         if n == 2:
             return [(
                 unet.down_blocks[2],
@@ -271,7 +271,7 @@ def splite_model(pipe, pipe_id, n):
             )]
         else:
             raise NotImplementedError
-    elif pipe_id == "emilianJR/epiCRealism": 
+    elif pipe_id == "ad":
         if n == 2:
             return [(
                 unet.conv_in,
@@ -301,7 +301,7 @@ def splite_model(pipe, pipe_id, n):
             )]
         else:
             raise NotImplementedError
-    elif pipe_id == "stabilityai/stable-diffusion-x4-upscaler": 
+    elif pipe_id == "sdup":
         if n == 2:
             return [(
                 unet.conv_in,
@@ -352,7 +352,7 @@ def splite_model(pipe, pipe_id, n):
                 unet.up_blocks[1],
             ),
                 (
-                unet.up_blocks[2]   
+                unet.up_blocks[2],
             ),
                 (
                 unet.up_blocks[3],
@@ -361,7 +361,7 @@ def splite_model(pipe, pipe_id, n):
             )]
         else:
             raise NotImplementedError
-    elif pipe_id == "stabilityai/stable-diffusion-3-medium-diffusers": 
+    elif pipe_id == "sd3":
         if n == 2:
             return [(
                 *transformer.transformer_blocks[0:12],
@@ -396,4 +396,4 @@ def splite_model(pipe, pipe_id, n):
             raise NotImplementedError
     else:
         raise NotImplementedError
-    
+
