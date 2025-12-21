@@ -88,10 +88,15 @@ class AsyncDiff(object):
                         if index in self.comm_index:
                             each.plugin.cache_sync(False)
                         index += 1
-                # if self.time_shift:
-                #     if infer_step>=self.warm_up:
-                #         kwargs["timestep"] = torch.cat([self.pipeline.scheduler.timesteps[infer_step-1].unsqueeze(0),
-                #                                         self.pipeline.scheduler.timesteps[infer_step-1].unsqueeze(0)])
+
+                if self.time_shift:
+                    if infer_step>=self.warm_up:
+                        device = kwargs["timestep"].device
+                        dtype = kwargs["timestep"].dtype
+                        timesteps = self.pipeline.scheduler.timesteps
+                        next_timestep = 1 - (timesteps[infer_step-1].item() / timesteps[0].item())
+                        kwargs["timestep"] = torch.tensor(next_timestep, device=device, dtype=dtype).unsqueeze(0)
+
                 sample = transformer.old_forward(*args, **kwargs)[0]
                 infer_step = self.reformed_modules[(0, 0)].plugin.infer_step
                 if infer_step>=self.warm_up and (infer_step-1)%self.stride == 0:
@@ -104,18 +109,22 @@ class AsyncDiff(object):
                             each.plugin.cache_sync(False)
                         index += 1
 
-                # if self.time_shift:
-                #     shift = 1
-                # else:
-                #     shift = 0
-                #
-                # if infer_step>=self.warm_up:
-                #     if dist.get_rank() < self.model_n and (infer_step-1)%self.stride == 0 and infer_step< len(self.pipeline.scheduler.timesteps)-1:
-                #         kwargs["timestep"] = torch.cat([self.pipeline.scheduler.timesteps[infer_step+1-shift].unsqueeze(0),
-                #                                         self.pipeline.scheduler.timesteps[infer_step+1-shift].unsqueeze(0)])
-                #     else:
-                #         kwargs["timestep"] = torch.cat([self.pipeline.scheduler.timesteps[infer_step-shift].unsqueeze(0),
-                #                                         self.pipeline.scheduler.timesteps[infer_step-shift].unsqueeze(0)])
+                if self.time_shift:
+                    shift = 1
+                else:
+                    shift = 0
+
+                if infer_step>=self.warm_up:
+                    device = kwargs["timestep"].device
+                    dtype = kwargs["timestep"].dtype
+                    timesteps = self.pipeline.scheduler.timesteps
+                    if dist.get_rank() < self.model_n and (infer_step-1)%self.stride == 0 and infer_step< len(self.pipeline.scheduler.timesteps)-1:
+                        next_timestep = 1 - (timesteps[infer_step+1-shift].item() / timesteps[0].item())
+                        kwargs["timestep"] = torch.tensor(next_timestep, device=device, dtype=dtype).unsqueeze(0)
+                    else:
+                        next_timestep = 1 - (timesteps[infer_step-shift].item() / timesteps[0].item())
+                        kwargs["timestep"] = torch.tensor(next_timestep, device=device, dtype=dtype).unsqueeze(0)
+
                 sample = transformer.old_forward(*args, **kwargs)[0]
 
                 infer_step = self.reformed_modules[(0, 0)].plugin.infer_step
