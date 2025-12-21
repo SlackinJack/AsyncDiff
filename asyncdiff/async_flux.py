@@ -94,8 +94,8 @@ class AsyncDiff(object):
                         device = kwargs["timestep"].device
                         dtype = kwargs["timestep"].dtype
                         timesteps = self.pipeline.scheduler.timesteps
-                        next_timestep = 1 - (timesteps[infer_step-1].item() / timesteps[0].item())
-                        kwargs["timestep"] = torch.tensor(next_timestep, device=device, dtype=dtype).unsqueeze(0)
+                        timestep = timesteps[infer_step-1].item() / timesteps[0].item()
+                        kwargs["timestep"] = torch.tensor(timestep, device=device, dtype=dtype).unsqueeze(0)
 
                 sample = transformer.old_forward(*args, **kwargs)[0]
                 infer_step = self.reformed_modules[(0, 0)].plugin.infer_step
@@ -119,11 +119,11 @@ class AsyncDiff(object):
                     dtype = kwargs["timestep"].dtype
                     timesteps = self.pipeline.scheduler.timesteps
                     if dist.get_rank() < self.model_n and (infer_step-1)%self.stride == 0 and infer_step< len(self.pipeline.scheduler.timesteps)-1:
-                        next_timestep = 1 - (timesteps[infer_step+1-shift].item() / timesteps[0].item())
-                        kwargs["timestep"] = torch.tensor(next_timestep, device=device, dtype=dtype).unsqueeze(0)
+                        timestep = timesteps[infer_step+1-shift].item() / timesteps[0].item()
+                        kwargs["timestep"] = torch.tensor(timestep, device=device, dtype=dtype).unsqueeze(0)
                     else:
-                        next_timestep = 1 - (timesteps[infer_step-shift].item() / timesteps[0].item())
-                        kwargs["timestep"] = torch.tensor(next_timestep, device=device, dtype=dtype).unsqueeze(0)
+                        timestep = timesteps[infer_step-shift].item() / timesteps[0].item()
+                        kwargs["timestep"] = torch.tensor(timestep, device=device, dtype=dtype).unsqueeze(0)
 
                 sample = transformer.old_forward(*args, **kwargs)[0]
 
