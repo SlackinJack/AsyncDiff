@@ -1,5 +1,5 @@
 def splite_model(pipe, pipe_id, n):
-    if pipe_id in ["flux", "sd3", "zimage"]:
+    if pipe_id in ["flux", "sd3", "wani2v", "want2v", "zimage"]:
         transformer = pipe.transformer
     else:
         unet = pipe.unet
@@ -521,7 +521,6 @@ def splite_model(pipe, pipe_id, n):
             )]
         else:
             raise NotImplementedError
-    # TODO: test
     elif pipe_id == "zimage":
         if n == 1:
             return [(
@@ -562,6 +561,45 @@ def splite_model(pipe, pipe_id, n):
             ), (
                 *transformer.layers[25:30],
                 transformer.all_final_layer,
+            )]
+        else:
+            raise NotImplementedError
+    elif pipe_id == "wani2v" or pipe_id == "want2v":
+        if n == 1:
+            return [(
+                *transformer.blocks[0:30],
+                transformer.norm_out,
+                transformer.proj_out,
+            )]
+        elif n == 2:
+            return [(
+                *transformer.blocks[0:15],
+            ), (
+                *transformer.blocks[15:30],
+                transformer.norm_out,
+                transformer.proj_out,
+            )]
+        elif n == 3:
+            return [(
+                *transformer.blocks[0:11],
+            ), (
+                *transformer.blocks[11:22],
+            ), (
+                *transformer.blocks[22:30],
+                transformer.norm_out,
+                transformer.proj_out,
+            )]
+        elif n == 4:
+            return [(
+                *transformer.blocks[0:8],
+            ), (
+                *transformer.blocks[8:16],
+            ), (
+                *transformer.blocks[16:24],
+            ), (
+                *transformer.blocks[24:30],
+                transformer.norm_out,
+                transformer.proj_out,
             )]
         else:
             raise NotImplementedError

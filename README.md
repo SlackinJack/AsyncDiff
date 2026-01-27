@@ -7,4 +7,3 @@ For information, please visit the [original repository](https://github.com/czg12
 
 ## Other Changes:
 - Support FLUX.1
-- Support Z-Image
