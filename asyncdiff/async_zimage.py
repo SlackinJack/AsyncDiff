@@ -19,7 +19,7 @@ class ModulePlugin(object):
 
     def cache_sync(self, async_flag):
         if self.infer_step >= self.warmup_n:
-            dist.broadcast_object_list(self.cached_result, src=self.model_i) # , async_op=async_flag)
+            dist.broadcast(self.cached_result, self.model_i, async_op=async_flag)
 
     def inject_forward(self):
         assert not hasattr(self.module, 'old_forward'), "Module already has old_forward attribute."
