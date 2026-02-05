@@ -92,30 +92,15 @@ class AsyncDiff(object):
                 if self.time_shift:
                     if infer_step>=self.warm_up:
                         args = list(arg for arg in args)
-                        device = args[1].device
-                        dtype = args[1].dtype
-                        timesteps = self.pipeline.scheduler.timesteps
-                        timestep = timesteps[infer_step-1].item() / timesteps[0].item()
-                        args[1] = torch.tensor(timestep, device=device, dtype=dtype).unsqueeze(0)
-
-                        # Handle cfg truncation
-                        current_guidance_scale = self.pipeline.guidance_scale
-                        if (
-                            self.pipeline.do_classifier_free_guidance
-                            and self.pipeline._cfg_truncation is not None
-                            and float(self.pipeline._cfg_truncation) <= 1
-                        ):
-                            if args[1].item() > self.pipeline._cfg_truncation:
-                                current_guidance_scale = 0.0
-                        apply_cfg = self.pipeline.do_classifier_free_guidance and current_guidance_scale > 0
-                        if apply_cfg:
-                            args[1] = args[1].repeat(2)
-                        args = tuple(arg for arg in args)
+                        args[1] = torch.cat([self.pipeline.scheduler.timesteps[infer_step-1].unsqueeze(0),
+                                              self.pipeline.scheduler.timesteps[infer_step-1].unsqueeze(0)])
 
                 sample = transformer.old_forward(*args, **kwargs)[0]
                 infer_step = self.reformed_modules[(0, 0)].plugin.infer_step
                 if infer_step>=self.warm_up and (infer_step-1)%self.stride == 0:
-                    dist.broadcast_object_list(sample, src=self.model_n-1)
+                    sample = torch.stack(sample)
+                    dist.broadcast(sample, self.model_n-1)
+                    sample = torch.unbind(sample)
                 return sample,
             else:
                 if (infer_step-1)%self.stride == 1:
@@ -131,35 +116,19 @@ class AsyncDiff(object):
 
                 if infer_step>=self.warm_up:
                     args = list(arg for arg in args)
-                    device = args[1].device
-                    dtype = args[1].dtype
-                    timesteps = self.pipeline.scheduler.timesteps
                     if dist.get_rank() < self.model_n and (infer_step-1)%self.stride == 0 and infer_step< len(self.pipeline.scheduler.timesteps)-1:
-                        timestep = timesteps[infer_step+1-shift].item() / timesteps[0].item()
-                        args[1] = torch.tensor(timestep, device=device, dtype=dtype).unsqueeze(0)
+                        args[1] = torch.cat([self.pipeline.scheduler.timesteps[infer_step+1-shift].unsqueeze(0),
+                                              self.pipeline.scheduler.timesteps[infer_step+1-shift].unsqueeze(0)])
                     else:
-                        timestep = timesteps[infer_step-shift].item() / timesteps[0].item()
-                        args[1] = torch.tensor(timestep, device=device, dtype=dtype).unsqueeze(0)
-
-                    # Handle cfg truncation
-                    current_guidance_scale = self.pipeline.guidance_scale
-                    if (
-                        self.pipeline.do_classifier_free_guidance
-                        and self.pipeline._cfg_truncation is not None
-                        and float(self.pipeline._cfg_truncation) <= 1
-                    ):
-                        if args[1].item() > self.pipeline._cfg_truncation:
-                            current_guidance_scale = 0.0
-                    apply_cfg = self.pipeline.do_classifier_free_guidance and current_guidance_scale > 0
-                    if apply_cfg:
-                        args[1] = args[1].repeat(2)
-                    args = tuple(arg for arg in args)
+                        args[1] = torch.cat([self.pipeline.scheduler.timesteps[infer_step-shift].unsqueeze(0),
+                                              self.pipeline.scheduler.timesteps[infer_step-shift].unsqueeze(0)])
 
                 sample = transformer.old_forward(*args, **kwargs)[0]
                 infer_step = self.reformed_modules[(0, 0)].plugin.infer_step
                 if infer_step>=self.warm_up and (infer_step-1)%self.stride == 1:
-                    dist.broadcast_object_list(sample, src=self.model_n)
-
+                    sample = torch.stack(sample)
+                    dist.broadcast(sample, self.model_n)
+                    sample = torch.unbind(sample)
                 return sample,
 
         transformer.forward = transformer_forward
@@ -170,15 +139,13 @@ class AsyncDiff(object):
         assert not hasattr(scheduler, "old_step"), "scheduler already has old_step attribute"
         scheduler.old_step = scheduler.step
         def scheduler_step(*args, **kwargs):
+            # TODO: this is really bandwidth expensive - try to get around it
             def set_device(obj):
-                if torch.is_tensor(obj):
-                    return obj.to(self.pipeline.device)
-                elif isinstance(obj, list):
-                    return [set_device(o) for o in obj]
+                if torch.is_tensor(obj):    return obj.to(self.pipeline.device)
+                elif isinstance(obj, list): return [set_device(o) for o in obj]
                 return obj
             args = tuple(set_device(arg) for arg in args)
             kwargs = {k: set_device(v) for k, v in kwargs.items()}
-
             return scheduler.old_step(*args, **kwargs)
         scheduler.step = scheduler_step
 
