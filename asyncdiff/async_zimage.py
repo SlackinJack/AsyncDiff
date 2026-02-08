@@ -56,7 +56,7 @@ class AsyncDiff(object):
         self.pipe_id = pipeline_type
         self.reformed_modules = {}
         self.reform_pipeline()
-        step = 24 // model_n
+        step = 30 // model_n
         self.comm_index = [(i + 1) * step for i in range(model_n - 1)]
 
     def reset_state(self,warm_up=1):

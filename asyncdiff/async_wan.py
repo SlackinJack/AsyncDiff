@@ -56,7 +56,7 @@ class AsyncDiff(object):
         self.pipe_id = pipeline_type
         self.reformed_modules = {}
         self.reform_pipeline()
-        step = 24 // model_n
+        step = 39 // model_n
         self.comm_index = [(i + 1) * step for i in range(model_n - 1)]
 
     def reset_state(self,warm_up=1):
@@ -126,7 +126,6 @@ class AsyncDiff(object):
                 #         kwargs["timestep"] = torch.tensor(timestep, device=device, dtype=dtype).unsqueeze(0)
 
                 sample = transformer.old_forward(*args, **kwargs)[0]
-
                 infer_step = self.reformed_modules[(0, 0)].plugin.infer_step
                 if infer_step>=self.warm_up and (infer_step-1)%self.stride == 1:
                     dist.broadcast(sample, self.model_n)

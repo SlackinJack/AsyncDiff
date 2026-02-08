@@ -492,8 +492,9 @@ def splite_model(pipe, pipe_id, n):
         elif n == 2:
             return [(
                 *transformer.transformer_blocks[0:19],
+                *transformer.single_transformer_blocks[0:11]
             ), (
-                *transformer.single_transformer_blocks[0:38],
+                *transformer.single_transformer_blocks[11:38],
                 transformer.norm_out,
                 transformer.proj_out
             )]
@@ -524,42 +525,42 @@ def splite_model(pipe, pipe_id, n):
     elif pipe_id == "zimage":
         if n == 1:
             return [(
-                *transformer.noise_refiner[0:2],
-                *transformer.context_refiner[0:2],
                 *transformer.layers[0:30],
+                # *transformer.noise_refiner[0:2],
+                # *transformer.context_refiner[0:2],
                 transformer.all_final_layer,
             )]
         elif n == 2:
             return [(
-                *transformer.noise_refiner[0:2],
-                *transformer.context_refiner[0:2],
                 *transformer.layers[0:15],
             ), (
                 *transformer.layers[15:30],
+                # *transformer.noise_refiner[0:2],
+                # *transformer.context_refiner[0:2],
                 transformer.all_final_layer,
             )]
         elif n == 3:
             return [(
-                *transformer.noise_refiner[0:2],
-                *transformer.context_refiner[0:2],
                 *transformer.layers[0:10],
             ), (
-                *transformer.layers[10:23],
+                *transformer.layers[10:20],
             ), (
-                *transformer.layers[23:30],
+                *transformer.layers[20:30],
+                # *transformer.noise_refiner[0:2],
+                # *transformer.context_refiner[0:2],
                 transformer.all_final_layer,
             )]
         elif n == 4:
             return [(
-                *transformer.noise_refiner[0:2],
-                *transformer.context_refiner[0:2],
-                *transformer.layers[0:6],
+                *transformer.layers[0:8],
             ), (
-                *transformer.layers[6:15],
+                *transformer.layers[8:16],
             ), (
-                *transformer.layers[15:25],
+                *transformer.layers[16:24],
             ), (
-                *transformer.layers[25:30],
+                *transformer.layers[24:30],
+                # *transformer.noise_refiner[0:2],
+                # *transformer.context_refiner[0:2],
                 transformer.all_final_layer,
             )]
         else:
@@ -567,37 +568,37 @@ def splite_model(pipe, pipe_id, n):
     elif pipe_id == "wani2v" or pipe_id == "want2v":
         if n == 1:
             return [(
-                *transformer.blocks[0:30],
+                *transformer.blocks[0:39],
                 transformer.norm_out,
                 transformer.proj_out,
             )]
         elif n == 2:
             return [(
-                *transformer.blocks[0:15],
+                *transformer.blocks[0:20],
             ), (
-                *transformer.blocks[15:30],
+                *transformer.blocks[20:39],
                 transformer.norm_out,
                 transformer.proj_out,
             )]
         elif n == 3:
             return [(
-                *transformer.blocks[0:11],
+                *transformer.blocks[0:14],
             ), (
-                *transformer.blocks[11:22],
+                *transformer.blocks[14:28],
             ), (
-                *transformer.blocks[22:30],
+                *transformer.blocks[28:39],
                 transformer.norm_out,
                 transformer.proj_out,
             )]
         elif n == 4:
             return [(
-                *transformer.blocks[0:8],
+                *transformer.blocks[0:10],
             ), (
-                *transformer.blocks[8:16],
+                *transformer.blocks[10:20],
             ), (
-                *transformer.blocks[16:24],
+                *transformer.blocks[20:30],
             ), (
-                *transformer.blocks[24:30],
+                *transformer.blocks[30:39],
                 transformer.norm_out,
                 transformer.proj_out,
             )]
