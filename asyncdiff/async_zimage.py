@@ -43,8 +43,7 @@ class ModulePlugin(object):
 
 class AsyncDiff(object):
     def __init__(self, pipeline, pipeline_type, model_n=2, stride=1, warm_up=1, time_shift=False):
-        # from datetime import timedelta
-        # dist.init_process_group("nccl", timeout=timedelta(days=1))
+        # dist.init_process_group("nccl")
         if not dist.get_rank(): assert model_n + stride - 1 == dist.get_world_size(), "[ERROR]: The strategy is not compatible with the number of devices. (model_n + stride - 1) should be equal to world_size."
         # assert stride==1 or stride==2, "[ERROR]: The stride should be set as 1 or 2"
         self.model_n = model_n
@@ -82,32 +81,35 @@ class AsyncDiff(object):
 
             index = 1
 
-            if self.stride==1:
-                if (infer_step-1)%self.stride == 0:
-                    for each in self.reformed_modules.values():
-                        if index in self.comm_index:
-                            each.plugin.cache_sync(False)
-                        index += 1
+            # if self.stride==1:
+            # if (infer_step-1)%self.stride == 0:
+            for each in self.reformed_modules.values():
+            # if index in self.comm_index:
+                each.plugin.cache_sync(False)
+            # index += 1
 
-                if self.time_shift:
-                    if infer_step>=self.warm_up:
-                        args = list(arg for arg in args)
-                        args[1] = torch.cat([self.pipeline.scheduler.timesteps[infer_step-1].unsqueeze(0),
-                                              self.pipeline.scheduler.timesteps[infer_step-1].unsqueeze(0)])
+            """
+            if self.time_shift:
+                if infer_step>=self.warm_up:
+                    args = list(arg for arg in args)
+                    args[1] = torch.cat([self.pipeline.scheduler.timesteps[infer_step-1].unsqueeze(0),
+                                            self.pipeline.scheduler.timesteps[infer_step-1].unsqueeze(0)])
+            """
 
-                sample = transformer.old_forward(*args, **kwargs)[0]
-                infer_step = self.reformed_modules[(0, 0)].plugin.infer_step
-                if infer_step>=self.warm_up and (infer_step-1)%self.stride == 0:
-                    sample = torch.stack(sample)
-                    dist.broadcast(sample, self.model_n-1)
-                    sample = torch.unbind(sample)
-                return sample,
+            sample = transformer.old_forward(*args, **kwargs)[0]
+            infer_step = self.reformed_modules[(0, 0)].plugin.infer_step
+            if infer_step>=self.warm_up and (infer_step-1)%self.stride == 0:
+                sample = torch.stack(sample)
+                dist.broadcast(sample, self.model_n-1)
+                sample = torch.unbind(sample)
+            return sample,
+            """
             else:
-                if (infer_step-1)%self.stride == 1:
-                    for each in self.reformed_modules.values():
-                        if index in self.comm_index:
-                            each.plugin.cache_sync(False)
-                        index += 1
+                # if (infer_step-1)%self.stride == 1:
+                for each in self.reformed_modules.values():
+                # if index in self.comm_index:
+                    each.plugin.cache_sync(False)
+                # index += 1
 
                 if self.time_shift:
                     shift = 1
@@ -130,6 +132,7 @@ class AsyncDiff(object):
                     dist.broadcast(sample, self.model_n)
                     sample = torch.unbind(sample)
                 return sample,
+            """
 
         transformer.forward = transformer_forward
 
