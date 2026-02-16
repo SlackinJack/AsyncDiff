@@ -74,36 +74,32 @@ class AsyncDiff(object):
         transformer.old_forward = transformer.forward
 
         def transformer_forward(*args, **kwargs):
-
-            # return transformer.old_forward(*args, **kwargs)
-
             infer_step = self.reformed_modules[(0, 0)].plugin.infer_step
-
             index = 1
 
-            # if self.stride==1:
-            # if (infer_step-1)%self.stride == 0:
-            for each in self.reformed_modules.values():
-            # if index in self.comm_index:
-                each.plugin.cache_sync(False)
-            # index += 1
+            if self.stride==1:
+                # if (infer_step-1)%self.stride == 0:
+                for each in self.reformed_modules.values():
+                # if index in self.comm_index:
+                    each.plugin.cache_sync(False)
+                # index += 1
 
-            """
-            if self.time_shift:
-                if infer_step>=self.warm_up:
-                    args = list(arg for arg in args)
-                    args[1] = torch.cat([self.pipeline.scheduler.timesteps[infer_step-1].unsqueeze(0),
-                                            self.pipeline.scheduler.timesteps[infer_step-1].unsqueeze(0)])
-            """
+                # TODO: re-implement timeshift
+                """
+                if self.time_shift:
+                    if infer_step>=self.warm_up:
+                        args = list(arg for arg in args)
+                        args[1] = torch.cat([self.pipeline.scheduler.timesteps[infer_step-1].unsqueeze(0),
+                                                self.pipeline.scheduler.timesteps[infer_step-1].unsqueeze(0)])
+                """
 
-            sample = transformer.old_forward(*args, **kwargs)[0]
-            infer_step = self.reformed_modules[(0, 0)].plugin.infer_step
-            if infer_step>=self.warm_up and (infer_step-1)%self.stride == 0:
-                sample = torch.stack(sample)
-                dist.broadcast(sample, self.model_n-1)
-                sample = torch.unbind(sample)
-            return sample,
-            """
+                sample = transformer.old_forward(*args, **kwargs)[0]
+                infer_step = self.reformed_modules[(0, 0)].plugin.infer_step
+                if infer_step>=self.warm_up and (infer_step-1)%self.stride == 0:
+                    sample = torch.stack(sample)
+                    dist.broadcast(sample, self.model_n-1)
+                    sample = torch.unbind(sample)
+                return sample,
             else:
                 # if (infer_step-1)%self.stride == 1:
                 for each in self.reformed_modules.values():
@@ -111,6 +107,8 @@ class AsyncDiff(object):
                     each.plugin.cache_sync(False)
                 # index += 1
 
+                # TODO: re-implement timeshift
+                """
                 if self.time_shift:
                     shift = 1
                 else:
@@ -124,6 +122,7 @@ class AsyncDiff(object):
                     else:
                         args[1] = torch.cat([self.pipeline.scheduler.timesteps[infer_step-shift].unsqueeze(0),
                                               self.pipeline.scheduler.timesteps[infer_step-shift].unsqueeze(0)])
+                """
 
                 sample = transformer.old_forward(*args, **kwargs)[0]
                 infer_step = self.reformed_modules[(0, 0)].plugin.infer_step
@@ -132,7 +131,6 @@ class AsyncDiff(object):
                     dist.broadcast(sample, self.model_n)
                     sample = torch.unbind(sample)
                 return sample,
-            """
 
         transformer.forward = transformer_forward
 
@@ -142,7 +140,6 @@ class AsyncDiff(object):
         assert not hasattr(scheduler, "old_step"), "scheduler already has old_step attribute"
         scheduler.old_step = scheduler.step
         def scheduler_step(*args, **kwargs):
-            # TODO: this is really bandwidth expensive - try to get around it
             def set_device(obj):
                 if torch.is_tensor(obj):    return obj.to(self.pipeline.device)
                 elif isinstance(obj, list): return [set_device(o) for o in obj]

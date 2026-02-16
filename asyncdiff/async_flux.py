@@ -43,8 +43,7 @@ class ModulePlugin(object):
 
 class AsyncDiff(object):
     def __init__(self, pipeline, pipeline_type, model_n=2, stride=1, warm_up=1, time_shift=False):
-        # from datetime import timedelta
-        # dist.init_process_group("nccl", timeout=timedelta(days=1))
+        # dist.init_process_group("nccl")
         if not dist.get_rank(): assert model_n + stride - 1 == dist.get_world_size(), "[ERROR]: The strategy is not compatible with the number of devices. (model_n + stride - 1) should be equal to world_size."
         # assert stride==1 or stride==2, "[ERROR]: The stride should be set as 1 or 2"
         self.model_n = model_n
@@ -75,11 +74,7 @@ class AsyncDiff(object):
         transformer.old_forward = transformer.forward
 
         def transformer_forward(*args, **kwargs):
-
-            # return transformer.old_forward(*args, **kwargs)
-
             infer_step = self.reformed_modules[(0, 0)].plugin.infer_step
-
             index = 1
 
             if self.stride==1:

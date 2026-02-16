@@ -3,6 +3,12 @@ import torch
 from .tools import ResultPicker
 from .pipe_config import splite_model
 
+"""########################################
+
+NOTE: This backend is currently incomplete.
+
+########################################"""
+
 class ModulePlugin(object):
     def __init__(self,module,  model_i, stride=1, run_mode=None) -> None:
         self.model_i, self.stride, self.run_mode = model_i, stride, run_mode
@@ -32,8 +38,8 @@ class ModulePlugin(object):
 
             if self.infer_step<self.warmup_n or run_locally:
                 result = module.old_forward(*args, **kwargs)
-                if (self.infer_step+1==self.warmup_n) or (self.infer_step + 1 > self.warmup_n and self.run_mode[1]==0):
-                    self.cached_result, self.result_structure = ResultPicker.dump(result)
+                # if (self.infer_step+1==self.warmup_n) or (self.infer_step + 1 > self.warmup_n and self.run_mode[1]==0):
+                self.cached_result, self.result_structure = ResultPicker.dump(result)
             else:
                 result = ResultPicker.load(self.cached_result, self.result_structure)
             self.infer_step += 1
@@ -43,8 +49,7 @@ class ModulePlugin(object):
 
 class AsyncDiff(object):
     def __init__(self, pipeline, pipeline_type, model_n=2, stride=1, warm_up=1, time_shift=False):
-        # from datetime import timedelta
-        # dist.init_process_group("nccl", timeout=timedelta(days=1))
+        # dist.init_process_group("nccl")
         if not dist.get_rank(): assert model_n + stride - 1 == dist.get_world_size(), "[ERROR]: The strategy is not compatible with the number of devices. (model_n + stride - 1) should be equal to world_size."
         # assert stride==1 or stride==2, "[ERROR]: The stride should be set as 1 or 2"
         self.model_n = model_n
@@ -75,27 +80,26 @@ class AsyncDiff(object):
         transformer.old_forward = transformer.forward
 
         def transformer_forward(*args, **kwargs):
-
-            # return transformer.old_forward(*args, **kwargs)
-
             infer_step = self.reformed_modules[(0, 0)].plugin.infer_step
-
             index = 1
 
             if self.stride==1:
-                if (infer_step-1)%self.stride == 0:
-                    for each in self.reformed_modules.values():
-                        if index in self.comm_index:
-                            each.plugin.cache_sync(False)
-                        index += 1
+                # if (infer_step-1)%self.stride == 0:
+                for each in self.reformed_modules.values():
+                # if index in self.comm_index:
+                    each.plugin.cache_sync(False)
+                # index += 1
 
-                # if self.time_shift:
-                #     if infer_step>=self.warm_up:
-                #         device = kwargs["timestep"].device
-                #         dtype = kwargs["timestep"].dtype
-                #         timesteps = self.pipeline.scheduler.timesteps
-                #         timestep = timesteps[infer_step-1].item() / timesteps[0].item()
-                #         kwargs["timestep"] = torch.tensor(timestep, device=device, dtype=dtype).unsqueeze(0)
+                # TODO: re-implement timeshift
+                """
+                if self.time_shift:
+                    if infer_step>=self.warm_up:
+                        device = kwargs["timestep"].device
+                        dtype = kwargs["timestep"].dtype
+                        timesteps = self.pipeline.scheduler.timesteps
+                        timestep = timesteps[infer_step-1].item() / timesteps[0].item()
+                        kwargs["timestep"] = torch.tensor(timestep, device=device, dtype=dtype).unsqueeze(0)
+                """
 
                 sample = transformer.old_forward(*args, **kwargs)[0]
                 infer_step = self.reformed_modules[(0, 0)].plugin.infer_step
@@ -103,27 +107,30 @@ class AsyncDiff(object):
                     dist.broadcast(sample, self.model_n-1)
                 return sample,
             else:
-                if (infer_step-1)%self.stride == 1:
-                    for each in self.reformed_modules.values():
-                        if index in self.comm_index:
-                            each.plugin.cache_sync(False)
-                        index += 1
+                # if (infer_step-1)%self.stride == 1:
+                for each in self.reformed_modules.values():
+                # if index in self.comm_index:
+                    each.plugin.cache_sync(False)
+                # index += 1
 
-                # if self.time_shift:
-                #     shift = 1
-                # else:
-                #     shift = 0
-                #
-                # if infer_step>=self.warm_up:
-                #     device = kwargs["timestep"].device
-                #     dtype = kwargs["timestep"].dtype
-                #     timesteps = self.pipeline.scheduler.timesteps
-                #     if dist.get_rank() < self.model_n and (infer_step-1)%self.stride == 0 and infer_step< len(self.pipeline.scheduler.timesteps)-1:
-                #         timestep = timesteps[infer_step+1-shift].item() / timesteps[0].item()
-                #         kwargs["timestep"] = torch.tensor(timestep, device=device, dtype=dtype).unsqueeze(0)
-                #     else:
-                #         timestep = timesteps[infer_step-shift].item() / timesteps[0].item()
-                #         kwargs["timestep"] = torch.tensor(timestep, device=device, dtype=dtype).unsqueeze(0)
+                # TODO: re-implement timeshift
+                """
+                if self.time_shift:
+                    shift = 1
+                else:
+                    shift = 0
+
+                if infer_step>=self.warm_up:
+                    device = kwargs["timestep"].device
+                    dtype = kwargs["timestep"].dtype
+                    timesteps = self.pipeline.scheduler.timesteps
+                    if dist.get_rank() < self.model_n and (infer_step-1)%self.stride == 0 and infer_step< len(self.pipeline.scheduler.timesteps)-1:
+                        timestep = timesteps[infer_step+1-shift].item() / timesteps[0].item()
+                        kwargs["timestep"] = torch.tensor(timestep, device=device, dtype=dtype).unsqueeze(0)
+                    else:
+                        timestep = timesteps[infer_step-shift].item() / timesteps[0].item()
+                        kwargs["timestep"] = torch.tensor(timestep, device=device, dtype=dtype).unsqueeze(0)
+                """
 
                 sample = transformer.old_forward(*args, **kwargs)[0]
                 infer_step = self.reformed_modules[(0, 0)].plugin.infer_step
