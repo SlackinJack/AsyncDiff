@@ -104,6 +104,7 @@ class AsyncDiff(object):
                 sample = transformer.old_forward(*args, **kwargs)[0]
                 infer_step = self.reformed_modules[(0, 0)].plugin.infer_step
                 if infer_step>=self.warm_up and (infer_step-1)%self.stride == 0:
+                    sample = sample.contiguous()
                     dist.broadcast(sample, self.model_n-1)
                 return sample,
             else:
@@ -135,7 +136,8 @@ class AsyncDiff(object):
                 sample = transformer.old_forward(*args, **kwargs)[0]
                 infer_step = self.reformed_modules[(0, 0)].plugin.infer_step
                 if infer_step>=self.warm_up and (infer_step-1)%self.stride == 1:
-                    dist.broadcast(sample, self.model_n)
+                    sample = sample.contiguous()
+                    dist.broadcast(sample, self.model_n-1)
 
                 return sample,
 

@@ -84,14 +84,21 @@ class AsyncDiff(object):
                     each.plugin.cache_sync(False)
                 # index += 1
 
-                # TODO: re-implement timeshift
-                """
                 if self.time_shift:
                     if infer_step>=self.warm_up:
                         args = list(arg for arg in args)
-                        args[1] = torch.cat([self.pipeline.scheduler.timesteps[infer_step-1].unsqueeze(0),
-                                                self.pipeline.scheduler.timesteps[infer_step-1].unsqueeze(0)])
-                """
+                        # NOTE: from pipeline_z_image.py
+                        timestep = self.pipeline.scheduler.timesteps[infer_step-1]
+                        # NOTE: always assume batch=1 for now
+                        # timestep = timestep.expand(latents.shape[0])
+                        timestep = timestep.expand(1)
+                        timestep = (1000 - timestep) / 1000
+                        normalized = timestep[0].item()
+                        if self.pipeline.do_classifier_free_guidance and self.pipeline._cfg_truncation is not None and float(self.pipeline._cfg_truncation) <= 1 and normalized > self.pipeline._cfg_truncation:
+                            pass
+                        elif self.pipeline.do_classifier_free_guidance:
+                            timestep = timestep.repeat(2)
+                        args[1] = timestep
 
                 sample = transformer.old_forward(*args, **kwargs)[0]
                 infer_step = self.reformed_modules[(0, 0)].plugin.infer_step
@@ -107,8 +114,6 @@ class AsyncDiff(object):
                     each.plugin.cache_sync(False)
                 # index += 1
 
-                # TODO: re-implement timeshift
-                """
                 if self.time_shift:
                     shift = 1
                 else:
@@ -116,13 +121,21 @@ class AsyncDiff(object):
 
                 if infer_step>=self.warm_up:
                     args = list(arg for arg in args)
+                    # NOTE: from pipeline_z_image.py
                     if dist.get_rank() < self.model_n and (infer_step-1)%self.stride == 0 and infer_step< len(self.pipeline.scheduler.timesteps)-1:
-                        args[1] = torch.cat([self.pipeline.scheduler.timesteps[infer_step+1-shift].unsqueeze(0),
-                                              self.pipeline.scheduler.timesteps[infer_step+1-shift].unsqueeze(0)])
+                        timestep = self.pipeline.scheduler.timesteps[infer_step+1-shift]
                     else:
-                        args[1] = torch.cat([self.pipeline.scheduler.timesteps[infer_step-shift].unsqueeze(0),
-                                              self.pipeline.scheduler.timesteps[infer_step-shift].unsqueeze(0)])
-                """
+                        timestep = self.pipeline.scheduler.timesteps[infer_step-shift]
+                    # NOTE: always assume batch=1 for now
+                    # timestep = timestep.expand(latents.shape[0])
+                    timestep = timestep.expand(1)
+                    timestep = (1000 - timestep) / 1000
+                    normalized = timestep[0].item()
+                    if self.pipeline.do_classifier_free_guidance and self.pipeline._cfg_truncation is not None and float(self.pipeline._cfg_truncation) <= 1 and normalized > self.pipeline._cfg_truncation:
+                        pass
+                    elif self.pipeline.do_classifier_free_guidance:
+                        timestep = timestep.repeat(2)
+                    args[1] = timestep
 
                 sample = transformer.old_forward(*args, **kwargs)[0]
                 infer_step = self.reformed_modules[(0, 0)].plugin.infer_step
