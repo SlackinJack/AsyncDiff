@@ -90,15 +90,13 @@ class AsyncDiff(object):
                     each.plugin.cache_sync(False)
                 # index += 1
 
-                # TODO: re-implement timeshift
+                # TODO: there are 2 steps for every 1 timestep
                 """
                 if self.time_shift:
                     if infer_step>=self.warm_up:
-                        device = kwargs["timestep"].device
-                        dtype = kwargs["timestep"].dtype
-                        timesteps = self.pipeline.scheduler.timesteps
-                        timestep = timesteps[infer_step-1].item() / timesteps[0].item()
-                        kwargs["timestep"] = torch.tensor(timestep, device=device, dtype=dtype).unsqueeze(0)
+                        timestep = self.pipeline.scheduler.timesteps[infer_step-1]
+                        timestep = timestep.expand(1)
+                        kwargs["timestep"] = timestep
                 """
 
                 sample = transformer.old_forward(*args, **kwargs)[0]
@@ -114,7 +112,7 @@ class AsyncDiff(object):
                     each.plugin.cache_sync(False)
                 # index += 1
 
-                # TODO: re-implement timeshift
+                # TODO: there are 2 steps for every 1 timestep
                 """
                 if self.time_shift:
                     shift = 1
@@ -122,15 +120,12 @@ class AsyncDiff(object):
                     shift = 0
 
                 if infer_step>=self.warm_up:
-                    device = kwargs["timestep"].device
-                    dtype = kwargs["timestep"].dtype
-                    timesteps = self.pipeline.scheduler.timesteps
                     if dist.get_rank() < self.model_n and (infer_step-1)%self.stride == 0 and infer_step< len(self.pipeline.scheduler.timesteps)-1:
-                        timestep = timesteps[infer_step+1-shift].item() / timesteps[0].item()
-                        kwargs["timestep"] = torch.tensor(timestep, device=device, dtype=dtype).unsqueeze(0)
+                        timestep = self.pipeline.scheduler.timesteps[infer_step+1-shift]
                     else:
-                        timestep = timesteps[infer_step-shift].item() / timesteps[0].item()
-                        kwargs["timestep"] = torch.tensor(timestep, device=device, dtype=dtype).unsqueeze(0)
+                        timestep = self.pipeline.scheduler.timesteps[infer_step+1-shift]
+                    timestep = timestep.expand(1)
+                    kwargs["timestep"] = timestep
                 """
 
                 sample = transformer.old_forward(*args, **kwargs)[0]

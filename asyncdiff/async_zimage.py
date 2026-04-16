@@ -78,11 +78,11 @@ class AsyncDiff(object):
             index = 1
 
             if self.stride==1:
-                # if (infer_step-1)%self.stride == 0:
-                for each in self.reformed_modules.values():
-                # if index in self.comm_index:
-                    each.plugin.cache_sync(False)
-                # index += 1
+                if (infer_step-1)%self.stride == 0 or self.model_n+self.stride>4:
+                    for each in self.reformed_modules.values():
+                        if index in self.comm_index or self.model_n+self.stride>4:
+                            each.plugin.cache_sync(False)
+                        index += 1
 
                 if self.time_shift:
                     if infer_step>=self.warm_up:
@@ -91,9 +91,11 @@ class AsyncDiff(object):
                         timestep = self.pipeline.scheduler.timesteps[infer_step-1]
                         # NOTE: always assume batch=1 for now
                         # timestep = timestep.expand(latents.shape[0])
-                        timestep = timestep.expand(1)
+
+                        # timestep = timestep.expand(1)
                         timestep = (1000 - timestep) / 1000
-                        normalized = timestep[0].item()
+                        # normalized = timestep[0].item()
+                        normalized = timestep.item()
                         if self.pipeline.do_classifier_free_guidance and self.pipeline._cfg_truncation is not None and float(self.pipeline._cfg_truncation) <= 1 and normalized > self.pipeline._cfg_truncation:
                             pass
                         elif self.pipeline.do_classifier_free_guidance:
@@ -108,11 +110,11 @@ class AsyncDiff(object):
                     sample = torch.unbind(sample)
                 return sample,
             else:
-                # if (infer_step-1)%self.stride == 1:
-                for each in self.reformed_modules.values():
-                # if index in self.comm_index:
-                    each.plugin.cache_sync(False)
-                # index += 1
+                if (infer_step-1)%self.stride == 1 or self.model_n+self.stride>4:
+                    for each in self.reformed_modules.values():
+                        if index in self.comm_index or self.model_n+self.stride>4:
+                            each.plugin.cache_sync(False)
+                        index += 1
 
                 if self.time_shift:
                     shift = 1
@@ -128,9 +130,11 @@ class AsyncDiff(object):
                         timestep = self.pipeline.scheduler.timesteps[infer_step-shift]
                     # NOTE: always assume batch=1 for now
                     # timestep = timestep.expand(latents.shape[0])
-                    timestep = timestep.expand(1)
+
+                    # timestep = timestep.expand(1)
                     timestep = (1000 - timestep) / 1000
-                    normalized = timestep[0].item()
+                    # normalized = timestep[0].item()
+                    normalized = timestep.item()
                     if self.pipeline.do_classifier_free_guidance and self.pipeline._cfg_truncation is not None and float(self.pipeline._cfg_truncation) <= 1 and normalized > self.pipeline._cfg_truncation:
                         pass
                     elif self.pipeline.do_classifier_free_guidance:

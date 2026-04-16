@@ -481,7 +481,7 @@ def splite_model(pipe, pipe_id, n):
             )]
         else:
             raise NotImplementedError
-    elif pipe_id == "flux":
+    elif pipe_id in ["flux"]:
         """
 FluxTransformer2DModel(
   (pos_embed): FluxPosEmbed()
@@ -683,7 +683,7 @@ ZImageTransformer2DModel(
       )
     )
   )
-  (context_refiner): ModuleList(                                                                                                                                                                                                                                                                     [0/1869]
+  (context_refiner): ModuleList(
     (0-1): 2 x ZImageTransformerBlock(
       (attention): Attention(
         (norm_q): RMSNorm()
@@ -781,7 +781,7 @@ ZImageTransformer2DModel(
             )]
         else:
             raise NotImplementedError
-    elif pipe_id == "wani2v" or pipe_id == "want2v": # TODO: might have to differentiate between 5b/14b, wan2.1/wan2.2
+    elif pipe_id in ["wani2v", "want2v"]: # TODO: might have to differentiate between 5b/14b, wan2.1/wan2.2
         if n == 1:
             return [(
                 *transformer.blocks[0:39],
