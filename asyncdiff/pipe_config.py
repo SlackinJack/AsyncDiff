@@ -1,5 +1,5 @@
 def splite_model(pipe, pipe_id, n):
-    if pipe_id in ["flux", "sd3", "wani2v", "want2v", "zimage"]:
+    if pipe_id in ["flux", "sd3", "zimage"]:
         transformer = pipe.transformer
     else:
         unet = pipe.unet
@@ -778,45 +778,6 @@ ZImageTransformer2DModel(
             ), (
                 *transformer.layers[24:30],
                 transformer.all_final_layer,
-            )]
-        else:
-            raise NotImplementedError
-    elif pipe_id in ["wani2v", "want2v"]: # TODO: might have to differentiate between 5b/14b, wan2.1/wan2.2
-        if n == 1:
-            return [(
-                *transformer.blocks[0:39],
-                transformer.norm_out,
-                transformer.proj_out,
-            )]
-        elif n == 2:
-            return [(
-                *transformer.blocks[0:20],
-            ), (
-                *transformer.blocks[20:39],
-                transformer.norm_out,
-                transformer.proj_out,
-            )]
-        elif n == 3:
-            return [(
-                *transformer.blocks[0:14],
-            ), (
-                *transformer.blocks[14:28],
-            ), (
-                *transformer.blocks[28:39],
-                transformer.norm_out,
-                transformer.proj_out,
-            )]
-        elif n == 4:
-            return [(
-                *transformer.blocks[0:10],
-            ), (
-                *transformer.blocks[10:20],
-            ), (
-                *transformer.blocks[20:30],
-            ), (
-                *transformer.blocks[30:39],
-                transformer.norm_out,
-                transformer.proj_out,
             )]
         else:
             raise NotImplementedError
