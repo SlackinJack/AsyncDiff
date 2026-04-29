@@ -1,6 +1,8 @@
-diffusers==0.36.0
 ftfy
-torch>=2.7.1
-torchvision>=0.22.1
+torchvision>=0.26.0
 tqdm>=4.67.1
-transformers>=4.57.6
+
+# version locks
+diffusers==0.36.0
+torch==2.11.0
+transformers==4.57.6

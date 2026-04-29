@@ -4,8 +4,8 @@ from .tools import ResultPicker
 from .pipe_config import splite_model
 
 class ModulePlugin(object):
-    def __init__(self,module,  model_i, stride=1, run_mode=None) -> None:
-        self.model_i, self.stride, self.run_mode = model_i, stride, run_mode
+    def __init__(self,module,  model_i, stride=1, run_mode=None, cache_step=1) -> None:
+        self.model_i, self.stride, self.run_mode, self.cache_step = model_i, stride, run_mode, cache_step
         self.module = module
         self.module.plugin = self
         self.init_state()
@@ -28,7 +28,7 @@ class ModulePlugin(object):
 
         def new_forward(*args, **kwargs):
 
-            run_locally = (self.run_mode[0]==self.model_i) and ((self.infer_step-1)%self.stride==0)
+            run_locally = (self.run_mode[0]==self.model_i) and ((self.infer_step-1)%self.stride==0) and ((self.infer_step-1)%self.cache_step==0)
 
             if self.infer_step<self.warmup_n or run_locally:
                 result = module.old_forward(*args, **kwargs)
@@ -43,7 +43,7 @@ class ModulePlugin(object):
         module.forward = new_forward
 
 class AsyncDiff(object):
-    def __init__(self, pipeline, pipeline_type, model_n=2, stride=1, warm_up=1, time_shift=False):
+    def __init__(self, pipeline, pipeline_type, model_n=2, stride=1, warm_up=1, time_shift=0, cache_step=1):
         # from datetime import timedelta
         # dist.init_process_group("nccl", timeout=timedelta(days=1))
         if not dist.get_rank(): assert model_n + stride - 1 == dist.get_world_size(), "[ERROR]: The strategy is not compatible with the number of devices. (model_n + stride - 1) should be equal to world_size."
@@ -52,6 +52,7 @@ class AsyncDiff(object):
         self.stride = stride
         self.warm_up = warm_up
         self.time_shift = time_shift
+        self.cache_step = cache_step
         self.pipeline = pipeline.to(f"cuda:{dist.get_rank()}")
         torch.cuda.set_device(f"cuda:{dist.get_rank()}")
         self.pipe_id = pipeline_type
@@ -65,7 +66,7 @@ class AsyncDiff(object):
 
     def reform_module(self, module, module_id, model_i):
         run_mode = (dist.get_rank(), 0) if dist.get_rank() < self.model_n else (self.model_n -1, 1)
-        ModulePlugin(module, model_i, self.stride, run_mode)
+        ModulePlugin(module, model_i, self.stride, run_mode, self.cache_step)
         self.reformed_modules[(model_i, module_id)] = module
 
     def reform_unet(self):
@@ -83,10 +84,10 @@ class AsyncDiff(object):
                 if (infer_step-1)%self.stride == 0:
                     for each in self.reformed_modules.values():
                         each.plugin.cache_sync(False)
-                if self.time_shift:
+                if self.time_shift > 0:
                     if infer_step>=self.warm_up:
                         args = list(args)
-                        args[1] = self.pipeline.scheduler.timesteps[infer_step-1]
+                        args[1] = self.pipeline.scheduler.timesteps[infer_step-self.time_shift]
                 sample = unet.old_forward(*args, **kwargs)[0]
                 infer_step = self.reformed_modules[(0, 0)].plugin.infer_step
                 if infer_step>=self.warm_up and (infer_step-1)%self.stride == 0:
@@ -97,18 +98,13 @@ class AsyncDiff(object):
                     for each in self.reformed_modules.values():
                         each.plugin.cache_sync(False)
 
-                if self.time_shift:
-                    shift = 1
-                else:
-                    shift = 0
-
                 if infer_step>=self.warm_up:
                     if dist.get_rank() < self.model_n and (infer_step-1)%self.stride == 0 and infer_step< len(self.pipeline.scheduler.timesteps)-1:
                         args = list(args)
-                        args[1] = self.pipeline.scheduler.timesteps[infer_step+1-shift]
+                        args[1] = self.pipeline.scheduler.timesteps[infer_step+1-self.time_shift]
                     else:
                         args = list(args)
-                        args[1] = self.pipeline.scheduler.timesteps[infer_step-shift]
+                        args[1] = self.pipeline.scheduler.timesteps[infer_step-self.time_shift]
                 sample = unet.old_forward(*args, **kwargs)[0]
 
                 infer_step = self.reformed_modules[(0, 0)].plugin.infer_step

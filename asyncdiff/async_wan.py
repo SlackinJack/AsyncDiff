@@ -3,6 +3,12 @@ import torch
 from .tools import ResultPicker
 from .pipe_config import splite_model
 
+"""########################################
+
+NOTE: This backend is currently incomplete.
+
+########################################"""
+
 class ModulePlugin(object):
     def __init__(self,module,  model_i, stride=1, run_mode=None, cache_step=1) -> None:
         self.model_i, self.stride, self.run_mode, self.cache_step = model_i, stride, run_mode, cache_step
@@ -32,8 +38,8 @@ class ModulePlugin(object):
 
             if self.infer_step<self.warmup_n or run_locally:
                 result = module.old_forward(*args, **kwargs)
-                if (self.infer_step+1==self.warmup_n) or (self.infer_step + 1 > self.warmup_n and self.run_mode[1]==0):
-                    self.cached_result, self.result_structure = ResultPicker.dump(result)
+                # if (self.infer_step+1==self.warmup_n) or (self.infer_step + 1 > self.warmup_n and self.run_mode[1]==0):
+                self.cached_result, self.result_structure = ResultPicker.dump(result)
             else:
                 result = ResultPicker.load(self.cached_result, self.result_structure)
             self.infer_step += 1
@@ -42,7 +48,7 @@ class ModulePlugin(object):
         module.forward = new_forward
 
 class AsyncDiff(object):
-    def __init__(self, pipeline, pipeline_type, model_n=2, stride=1, warm_up=1, time_shift=0, cache_step=1):
+    def __init__(self, pipeline, pipeline_type, model_n=2, stride=1, warm_up=1, time_shift=0):
         # dist.init_process_group("nccl")
         if not dist.get_rank(): assert model_n + stride - 1 == dist.get_world_size(), "[ERROR]: The strategy is not compatible with the number of devices. (model_n + stride - 1) should be equal to world_size."
         # assert stride==1 or stride==2, "[ERROR]: The stride should be set as 1 or 2"
@@ -50,13 +56,12 @@ class AsyncDiff(object):
         self.stride = stride
         self.warm_up = warm_up
         self.time_shift = time_shift
-        self.cache_step = cache_step
         self.pipeline = pipeline.to(f"cuda:{dist.get_rank()}")
         torch.cuda.set_device(f"cuda:{dist.get_rank()}")
         self.pipe_id = pipeline_type
         self.reformed_modules = {}
         self.reform_pipeline()
-        step = 30 // model_n
+        step = 39 // model_n
         self.comm_index = [(i + 1) * step for i in range(model_n - 1)]
 
     def reset_state(self,warm_up=1):
@@ -79,88 +84,59 @@ class AsyncDiff(object):
             index = 1
 
             if self.stride==1:
-                if (infer_step-1)%self.stride == 0 or self.model_n+self.stride>4:
-                    for each in self.reformed_modules.values():
-                        if index in self.comm_index or self.model_n+self.stride>4:
-                            each.plugin.cache_sync(False)
-                        index += 1
+                # if (infer_step-1)%self.stride == 0:
+                for each in self.reformed_modules.values():
+                # if index in self.comm_index:
+                    each.plugin.cache_sync(False)
+                # index += 1
 
-                if self.time_shift > 0:
+                # TODO: there are 2 steps for every 1 timestep
+                """
+                if self.time_shift:
                     if infer_step>=self.warm_up:
-                        args = list(arg for arg in args)
-                        # NOTE: from pipeline_z_image.py
-                        timestep = self.pipeline.scheduler.timesteps[infer_step-self.time_shift]
-                        # NOTE: always assume batch=1 for now
-                        # timestep = timestep.expand(latents.shape[0])
-
-                        # timestep = timestep.expand(1)
-                        timestep = (1000 - timestep) / 1000
-                        # normalized = timestep[0].item()
-                        normalized = timestep.item()
-                        if self.pipeline.do_classifier_free_guidance and self.pipeline._cfg_truncation is not None and float(self.pipeline._cfg_truncation) <= 1 and normalized > self.pipeline._cfg_truncation:
-                            pass
-                        elif self.pipeline.do_classifier_free_guidance:
-                            timestep = timestep.repeat(2)
-                        args[1] = timestep
+                        timestep = self.pipeline.scheduler.timesteps[infer_step-1]
+                        timestep = timestep.expand(1)
+                        kwargs["timestep"] = timestep
+                """
 
                 sample = transformer.old_forward(*args, **kwargs)[0]
                 infer_step = self.reformed_modules[(0, 0)].plugin.infer_step
                 if infer_step>=self.warm_up and (infer_step-1)%self.stride == 0:
-                    sample = torch.stack(sample)
+                    sample = sample.contiguous()
                     dist.broadcast(sample, self.model_n-1)
-                    sample = torch.unbind(sample)
                 return sample,
             else:
-                if (infer_step-1)%self.stride == 1 or self.model_n+self.stride>4:
-                    for each in self.reformed_modules.values():
-                        if index in self.comm_index or self.model_n+self.stride>4:
-                            each.plugin.cache_sync(False)
-                        index += 1
+                # if (infer_step-1)%self.stride == 1:
+                for each in self.reformed_modules.values():
+                # if index in self.comm_index:
+                    each.plugin.cache_sync(False)
+                # index += 1
+
+                # TODO: there are 2 steps for every 1 timestep
+                """
+                if self.time_shift:
+                    shift = 1
+                else:
+                    shift = 0
 
                 if infer_step>=self.warm_up:
-                    args = list(arg for arg in args)
-                    # NOTE: from pipeline_z_image.py
                     if dist.get_rank() < self.model_n and (infer_step-1)%self.stride == 0 and infer_step< len(self.pipeline.scheduler.timesteps)-1:
-                        timestep = self.pipeline.scheduler.timesteps[infer_step+1-self.time_shift]
+                        timestep = self.pipeline.scheduler.timesteps[infer_step+1-shift]
                     else:
-                        timestep = self.pipeline.scheduler.timesteps[infer_step-self.time_shift]
-                    # NOTE: always assume batch=1 for now
-                    # timestep = timestep.expand(latents.shape[0])
-
-                    # timestep = timestep.expand(1)
-                    timestep = (1000 - timestep) / 1000
-                    # normalized = timestep[0].item()
-                    normalized = timestep.item()
-                    if self.pipeline.do_classifier_free_guidance and self.pipeline._cfg_truncation is not None and float(self.pipeline._cfg_truncation) <= 1 and normalized > self.pipeline._cfg_truncation:
-                        pass
-                    elif self.pipeline.do_classifier_free_guidance:
-                        timestep = timestep.repeat(2)
-                    args[1] = timestep
+                        timestep = self.pipeline.scheduler.timesteps[infer_step+1-shift]
+                    timestep = timestep.expand(1)
+                    kwargs["timestep"] = timestep
+                """
 
                 sample = transformer.old_forward(*args, **kwargs)[0]
                 infer_step = self.reformed_modules[(0, 0)].plugin.infer_step
                 if infer_step>=self.warm_up and (infer_step-1)%self.stride == 1:
-                    sample = torch.stack(sample)
-                    dist.broadcast(sample, self.model_n)
-                    sample = torch.unbind(sample)
+                    sample = sample.contiguous()
+                    dist.broadcast(sample, self.model_n-1)
+
                 return sample,
 
         transformer.forward = transformer_forward
-
-
-    def reform_scheduler(self):
-        scheduler = self.pipeline.scheduler
-        assert not hasattr(scheduler, "old_step"), "scheduler already has old_step attribute"
-        scheduler.old_step = scheduler.step
-        def scheduler_step(*args, **kwargs):
-            def set_device(obj):
-                if torch.is_tensor(obj):    return obj.to(self.pipeline.device)
-                elif isinstance(obj, list): return [set_device(o) for o in obj]
-                return obj
-            args = tuple(set_device(arg) for arg in args)
-            kwargs = {k: set_device(v) for k, v in kwargs.items()}
-            return scheduler.old_step(*args, **kwargs)
-        scheduler.step = scheduler_step
 
 
     def reform_pipeline(self):
@@ -169,4 +145,3 @@ class AsyncDiff(object):
             for module_id, module in enumerate(sub_model):
                 self.reform_module(module, module_id, model_i)
         self.reform_transformer()
-        self.reform_scheduler()
