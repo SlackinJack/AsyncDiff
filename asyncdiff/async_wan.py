@@ -48,7 +48,7 @@ class ModulePlugin(object):
         module.forward = new_forward
 
 class AsyncDiff(object):
-    def __init__(self, pipeline, pipeline_type, model_n=2, stride=1, warm_up=1, time_shift=0):
+    def __init__(self, pipeline, pipeline_type, model_n=2, stride=1, warm_up=1, time_shift=0, cache_step=1):
         # dist.init_process_group("nccl")
         if not dist.get_rank(): assert model_n + stride - 1 == dist.get_world_size(), "[ERROR]: The strategy is not compatible with the number of devices. (model_n + stride - 1) should be equal to world_size."
         # assert stride==1 or stride==2, "[ERROR]: The stride should be set as 1 or 2"
@@ -56,6 +56,7 @@ class AsyncDiff(object):
         self.stride = stride
         self.warm_up = warm_up
         self.time_shift = time_shift
+        self.cache_step = cache_step
         self.pipeline = pipeline.to(f"cuda:{dist.get_rank()}")
         torch.cuda.set_device(f"cuda:{dist.get_rank()}")
         self.pipe_id = pipeline_type
@@ -84,7 +85,8 @@ class AsyncDiff(object):
             index = 1
 
             if self.stride==1:
-                # if (infer_step-1)%self.stride == 0:
+                run_locally = (infer_step-1)%self.stride == 0 and (infer_step-1)%self.cache_step == 0
+                # if run_locally:
                 for each in self.reformed_modules.values():
                 # if index in self.comm_index:
                     each.plugin.cache_sync(False)
@@ -101,12 +103,13 @@ class AsyncDiff(object):
 
                 sample = transformer.old_forward(*args, **kwargs)[0]
                 infer_step = self.reformed_modules[(0, 0)].plugin.infer_step
-                if infer_step>=self.warm_up and (infer_step-1)%self.stride == 0:
+                if infer_step>=self.warm_up and run_locally:
                     sample = sample.contiguous()
                     dist.broadcast(sample, self.model_n-1)
                 return sample,
             else:
-                # if (infer_step-1)%self.stride == 1:
+                run_locally = (infer_step-1)%self.stride == 1 and (infer_step-1)%self.cache_step == 1
+                # if run_locally:
                 for each in self.reformed_modules.values():
                 # if index in self.comm_index:
                     each.plugin.cache_sync(False)
@@ -120,7 +123,7 @@ class AsyncDiff(object):
                     shift = 0
 
                 if infer_step>=self.warm_up:
-                    if dist.get_rank() < self.model_n and (infer_step-1)%self.stride == 0 and infer_step< len(self.pipeline.scheduler.timesteps)-1:
+                    if dist.get_rank() < self.model_n and run_locally and infer_step< len(self.pipeline.scheduler.timesteps)-1:
                         timestep = self.pipeline.scheduler.timesteps[infer_step+1-shift]
                     else:
                         timestep = self.pipeline.scheduler.timesteps[infer_step+1-shift]
@@ -130,7 +133,7 @@ class AsyncDiff(object):
 
                 sample = transformer.old_forward(*args, **kwargs)[0]
                 infer_step = self.reformed_modules[(0, 0)].plugin.infer_step
-                if infer_step>=self.warm_up and (infer_step-1)%self.stride == 1:
+                if infer_step>=self.warm_up and run_locally:
                     sample = sample.contiguous()
                     dist.broadcast(sample, self.model_n-1)
 

@@ -83,7 +83,8 @@ class AsyncDiff(object):
             index = 1
 
             if self.stride==1:
-                if (infer_step-1)%self.stride == 0:
+                run_locally = (infer_step-1)%self.stride == 0 and (infer_step-1)%self.cache_step == 0
+                if run_locally:
                     for each in self.reformed_modules.values():
                         if index in self.comm_index:
                             each.plugin.cache_sync(False)
@@ -94,18 +95,19 @@ class AsyncDiff(object):
                                                         self.pipeline.scheduler.timesteps[infer_step-self.time_shift].unsqueeze(0)])
                 sample = transformer.old_forward(*args, **kwargs)[0]
                 infer_step = self.reformed_modules[(0, 0)].plugin.infer_step
-                if infer_step>=self.warm_up and (infer_step-1)%self.stride == 0:
+                if infer_step>=self.warm_up and run_locally:
                     dist.broadcast(sample, self.model_n-1)
                 return sample,
             else:
-                if (infer_step-1)%self.stride == 1:
+                run_locally = (infer_step-1)%self.stride == 1 and (infer_step-1)%self.cache_step == 1
+                if run_locally:
                     for each in self.reformed_modules.values():
                         if index in self.comm_index:
                             each.plugin.cache_sync(False)
                         index += 1
 
                 if infer_step>=self.warm_up:
-                    if dist.get_rank() < self.model_n and (infer_step-1)%self.stride == 0 and infer_step< len(self.pipeline.scheduler.timesteps)-1:
+                    if dist.get_rank() < self.model_n and run_locally and infer_step< len(self.pipeline.scheduler.timesteps)-1:
                         kwargs["timestep"] = torch.cat([self.pipeline.scheduler.timesteps[infer_step+1-self.time_shift].unsqueeze(0),
                                                         self.pipeline.scheduler.timesteps[infer_step+1-self.time_shift].unsqueeze(0)])
                     else:
@@ -114,7 +116,7 @@ class AsyncDiff(object):
                 sample = transformer.old_forward(*args, **kwargs)[0]
 
                 infer_step = self.reformed_modules[(0, 0)].plugin.infer_step
-                if infer_step>=self.warm_up and (infer_step-1)%self.stride == 1:
+                if infer_step>=self.warm_up and run_locally:
                     dist.broadcast(sample, self.model_n)
 
                 return sample,

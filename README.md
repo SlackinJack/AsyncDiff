@@ -8,6 +8,5 @@ For more information, please visit the [original repository](https://github.com/
 
 
 ## Other Changes:
-- Add cache_step argument (inspired by other Diffusers caching solutions)
 - Support FLUX.1
 - Support Z-Image

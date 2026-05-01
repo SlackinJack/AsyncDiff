@@ -44,8 +44,7 @@ class ModulePlugin(object):
 
 class AsyncDiff(object):
     def __init__(self, pipeline, pipeline_type, model_n=2, stride=1, warm_up=1, time_shift=0, cache_step=1):
-        # from datetime import timedelta
-        # dist.init_process_group("nccl", timeout=timedelta(days=1))
+        # dist.init_process_group("nccl")
         if not dist.get_rank(): assert model_n + stride - 1 == dist.get_world_size(), "[ERROR]: The strategy is not compatible with the number of devices. (model_n + stride - 1) should be equal to world_size."
         # assert stride==1 or stride==2, "[ERROR]: The stride should be set as 1 or 2"
         self.model_n = model_n
@@ -81,7 +80,8 @@ class AsyncDiff(object):
             infer_step = self.reformed_modules[(0, 0)].plugin.infer_step
 
             if self.stride==1:
-                if (infer_step-1)%self.stride == 0:
+                run_locally = (infer_step-1)%self.stride == 0 and (infer_step-1)%self.cache_step == 0
+                if run_locally:
                     for each in self.reformed_modules.values():
                         each.plugin.cache_sync(False)
                 if self.time_shift > 0:
@@ -90,16 +90,17 @@ class AsyncDiff(object):
                         args[1] = self.pipeline.scheduler.timesteps[infer_step-self.time_shift]
                 sample = unet.old_forward(*args, **kwargs)[0]
                 infer_step = self.reformed_modules[(0, 0)].plugin.infer_step
-                if infer_step>=self.warm_up and (infer_step-1)%self.stride == 0:
+                if infer_step>=self.warm_up and run_locally:
                     dist.broadcast(sample, self.model_n-1)
                 return sample,
             else:
-                if (infer_step-1)%self.stride == 1:
+                run_locally = (infer_step-1)%self.stride == 1 and (infer_step-1)%self.cache_step == 1
+                if run_locally:
                     for each in self.reformed_modules.values():
                         each.plugin.cache_sync(False)
 
                 if infer_step>=self.warm_up:
-                    if dist.get_rank() < self.model_n and (infer_step-1)%self.stride == 0 and infer_step< len(self.pipeline.scheduler.timesteps)-1:
+                    if dist.get_rank() < self.model_n and run_locally and infer_step< len(self.pipeline.scheduler.timesteps)-1:
                         args = list(args)
                         args[1] = self.pipeline.scheduler.timesteps[infer_step+1-self.time_shift]
                     else:
@@ -108,7 +109,7 @@ class AsyncDiff(object):
                 sample = unet.old_forward(*args, **kwargs)[0]
 
                 infer_step = self.reformed_modules[(0, 0)].plugin.infer_step
-                if infer_step>=self.warm_up and (infer_step-1)%self.stride == 1:
+                if infer_step>=self.warm_up and run_locally:
                     dist.broadcast(sample, self.model_n)
 
                 return sample,
