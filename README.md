@@ -4,7 +4,9 @@ For more information, please visit the [original repository](https://github.com/
 
 
 ## Breaking Changes:
-- Requires an additional 'pipeline_type' argument (to set 'pipe_id').
+- Manual init of distributed environment
+- Requires an additional 'pipeline_type' argument (to set 'pipe_id')
+- Changed 'time_shift' argument from boolean to integer
 
 
 ## Other Changes:

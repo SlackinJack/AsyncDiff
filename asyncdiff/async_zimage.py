@@ -112,7 +112,7 @@ class AsyncDiff(object):
                     sample = torch.unbind(sample)
                 return sample,
             else:
-                run_locally = (infer_step-1)%self.stride == 1 and (infer_step-1)%self.cache_step == 1
+                run_locally = (infer_step-1)%self.stride == self.stride - 1 and (infer_step-1)%self.cache_step == 0
                 if run_locally or self.model_n+self.stride>4:
                     for each in self.reformed_modules.values():
                         if index in self.comm_index or self.model_n+self.stride>4:

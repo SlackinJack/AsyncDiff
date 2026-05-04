@@ -94,7 +94,7 @@ class AsyncDiff(object):
                     dist.broadcast(sample, self.model_n-1)
                 return sample,
             else:
-                run_locally = (infer_step-1)%self.stride == 1 and (infer_step-1)%self.cache_step == 1
+                run_locally = (infer_step-1)%self.stride == self.stride - 1 and (infer_step-1)%self.cache_step == 0
                 if run_locally:
                     for each in self.reformed_modules.values():
                         each.plugin.cache_sync(False)
