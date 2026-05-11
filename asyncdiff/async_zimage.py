@@ -27,7 +27,6 @@ class ModulePlugin(object):
         module.old_forward = module.forward
 
         def new_forward(*args, **kwargs):
-
             run_locally = (self.run_mode[0]==self.model_i) and ((self.infer_step-1)%self.stride==0) and ((self.infer_step-1)%self.cache_step==0)
 
             if self.infer_step<self.warmup_n or run_locally:
@@ -38,7 +37,6 @@ class ModulePlugin(object):
                 result = ResultPicker.load(self.cached_result, self.result_structure)
             self.infer_step += 1
             return result
-
         module.forward = new_forward
 
 class AsyncDiff(object):
@@ -80,6 +78,7 @@ class AsyncDiff(object):
 
             if self.stride==1:
                 run_locally = (infer_step-1)%self.stride == 0 and (infer_step-1)%self.cache_step == 0
+                # BUG: image deteriorates when n_gpu>3
                 if run_locally or self.model_n+self.stride>4:
                     for each in self.reformed_modules.values():
                         if index in self.comm_index or self.model_n+self.stride>4:
@@ -89,14 +88,8 @@ class AsyncDiff(object):
                 if self.time_shift > 0:
                     if infer_step>=self.warm_up:
                         args = list(arg for arg in args)
-                        # NOTE: from pipeline_z_image.py
                         timestep = self.pipeline.scheduler.timesteps[infer_step-self.time_shift]
-                        # NOTE: always assume batch=1 for now
-                        # timestep = timestep.expand(latents.shape[0])
-
-                        # timestep = timestep.expand(1)
                         timestep = (1000 - timestep) / 1000
-                        # normalized = timestep[0].item()
                         normalized = timestep.item()
                         if self.pipeline.do_classifier_free_guidance and self.pipeline._cfg_truncation is not None and float(self.pipeline._cfg_truncation) <= 1 and normalized > self.pipeline._cfg_truncation:
                             pass
@@ -113,6 +106,7 @@ class AsyncDiff(object):
                 return sample,
             else:
                 run_locally = (infer_step-1)%self.stride == self.stride - 1 and (infer_step-1)%self.cache_step == 0
+                # BUG: image deteriorates when n_gpu>3
                 if run_locally or self.model_n+self.stride>4:
                     for each in self.reformed_modules.values():
                         if index in self.comm_index or self.model_n+self.stride>4:
@@ -121,17 +115,11 @@ class AsyncDiff(object):
 
                 if infer_step>=self.warm_up:
                     args = list(arg for arg in args)
-                    # NOTE: from pipeline_z_image.py
                     if dist.get_rank() < self.model_n and run_locally and infer_step< len(self.pipeline.scheduler.timesteps)-1:
                         timestep = self.pipeline.scheduler.timesteps[infer_step+1-self.time_shift]
                     else:
                         timestep = self.pipeline.scheduler.timesteps[infer_step-self.time_shift]
-                    # NOTE: always assume batch=1 for now
-                    # timestep = timestep.expand(latents.shape[0])
-
-                    # timestep = timestep.expand(1)
                     timestep = (1000 - timestep) / 1000
-                    # normalized = timestep[0].item()
                     normalized = timestep.item()
                     if self.pipeline.do_classifier_free_guidance and self.pipeline._cfg_truncation is not None and float(self.pipeline._cfg_truncation) <= 1 and normalized > self.pipeline._cfg_truncation:
                         pass
@@ -146,7 +134,6 @@ class AsyncDiff(object):
                     dist.broadcast(sample, self.model_n)
                     sample = torch.unbind(sample)
                 return sample,
-
         transformer.forward = transformer_forward
 
 
