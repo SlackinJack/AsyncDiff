@@ -5,10 +5,12 @@ For more information, please visit the [original repository](https://github.com/
 
 ## Breaking Changes:
 - Manual init of distributed environment
-- Requires an additional 'pipeline_type' argument (to set 'pipe_id')
-- Changed 'time_shift' argument from boolean to integer
+- Requires an additional `pipeline_type` argument (to set `pipe_id`)
+- Changed `time_shift` argument from boolean to integer
 
 
 ## Other Changes:
+- Allow stride > 2
 - Support FLUX.1
 - Support Z-Image
+- Add `cached_step` argument (e.g. 4 cached_step = skips every 4th step by reusing cached result)

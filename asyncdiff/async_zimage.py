@@ -3,9 +3,13 @@ import torch
 from .tools import ResultPicker
 from .pipe_config import splite_model
 
+
 class ModulePlugin(object):
-    def __init__(self,module,  model_i, stride=1, run_mode=None, cache_step=1) -> None:
-        self.model_i, self.stride, self.run_mode, self.cache_step = model_i, stride, run_mode, cache_step
+    def __init__(self,module,  model_i, stride=1, run_mode=None, cached_step=1):
+        self.model_i = model_i
+        self.stride = stride
+        self.run_mode = run_mode
+        self.cached_step = cached_step
         self.module = module
         self.module.plugin = self
         self.init_state()
@@ -14,7 +18,8 @@ class ModulePlugin(object):
 
     def init_state(self,warmup_n=1):
         self.warmup_n = warmup_n
-        self.result_structure, self.cached_result = None, None
+        self.result_structure = None
+        self.cached_result = None
         self.infer_step = 0
 
     def cache_sync(self, async_flag):
@@ -27,35 +32,50 @@ class ModulePlugin(object):
         module.old_forward = module.forward
 
         def new_forward(*args, **kwargs):
-            run_locally = (self.run_mode[0]==self.model_i) and ((self.infer_step-1)%self.stride==0) and ((self.infer_step-1)%self.cache_step==0)
-
-            if self.infer_step<self.warmup_n or run_locally:
+            run_locally = (self.run_mode[0] == self.model_i) and ((self.infer_step - 1) % self.stride == self.stride - 1) and (self.cached_step <= 1 or (self.infer_step - 1) % self.cached_step != 0)
+            if self.infer_step < self.warmup_n:
+                if self.rank == 0 or self.cached_result is None:
+                    result = module.old_forward(*args, **kwargs)
+                    c_r, r_s = ResultPicker.dump(result)
+                    dist.broadcast(c_r, 0)
+                    self.cached_result, self.result_structure = c_r, r_s
+                else:
+                    dist.broadcast(self.cached_result, 0)
+                    result = ResultPicker.load(self.cached_result, self.result_structure)
+            elif run_locally:
                 result = module.old_forward(*args, **kwargs)
-                if (self.infer_step+1==self.warmup_n) or (self.infer_step + 1 > self.warmup_n and self.run_mode[1]==0):
+                if (self.infer_step + 1 == self.warmup_n) or (self.infer_step + 1 > self.warmup_n and self.run_mode[1] == 0):
                     self.cached_result, self.result_structure = ResultPicker.dump(result)
             else:
                 result = ResultPicker.load(self.cached_result, self.result_structure)
             self.infer_step += 1
             return result
+
         module.forward = new_forward
 
+
 class AsyncDiff(object):
-    def __init__(self, pipeline, pipeline_type, model_n=2, stride=1, warm_up=1, time_shift=0, cache_step=1):
-        # dist.init_process_group("nccl")
-        if not dist.get_rank(): assert model_n + stride - 1 == dist.get_world_size(), "[ERROR]: The strategy is not compatible with the number of devices. (model_n + stride - 1) should be equal to world_size."
-        # assert stride==1 or stride==2, "[ERROR]: The stride should be set as 1 or 2"
-        self.model_n = model_n
-        self.stride = stride
-        self.warm_up = warm_up
-        self.time_shift = time_shift
-        self.cache_step = cache_step
-        self.pipeline = pipeline.to(f"cuda:{dist.get_rank()}")
+    def __init__(self, *args, **kwargs):
+        # args
+        self.pipeline = args[0].to(f"cuda:{dist.get_rank()}")
         torch.cuda.set_device(f"cuda:{dist.get_rank()}")
-        self.pipe_id = pipeline_type
+        self.pipe_id = args[1]
+
+        # kwargs
+        self.model_n = kwargs.get("model_n", 2)
+        self.stride = kwargs.get("stride", 1)
+        self.warm_up = kwargs.get("warm_up", 1)
+        self.time_shift = kwargs.get("time_shift", 0)
+        self.cached_step = kwargs.get("cached_step", 1)
+
+        # other
+        # dist.init_process_group("nccl")
+        if not dist.get_rank():
+            assert self.model_n + self.stride - 1 == dist.get_world_size(), "[ERROR]: The strategy is not compatible with the number of devices. (model_n + stride - 1) should be equal to world_size."
         self.reformed_modules = {}
         self.reform_pipeline()
-        step = 30 // model_n
-        self.comm_index = [(i + 1) * step for i in range(model_n - 1)]
+        # step = 30 // self.model_n
+        # self.comm_index = [(i + 1) * step for i in range(self.model_n - 1)]
 
     def reset_state(self,warm_up=1):
         self.warm_up = warm_up
@@ -64,7 +84,7 @@ class AsyncDiff(object):
 
     def reform_module(self, module, module_id, model_i):
         run_mode = (dist.get_rank(), 0) if dist.get_rank() < self.model_n else (self.model_n -1, 1)
-        ModulePlugin(module, model_i, self.stride, run_mode, self.cache_step)
+        ModulePlugin(module, model_i, self.stride, run_mode, self.cached_step)
         self.reformed_modules[(model_i, module_id)] = module
 
     def reform_transformer(self):
@@ -75,65 +95,34 @@ class AsyncDiff(object):
         def transformer_forward(*args, **kwargs):
             infer_step = self.reformed_modules[(0, 0)].plugin.infer_step
             index = 1
+            run_locally = (infer_step - 1) % self.stride == self.stride - 1 and (self.cached_step <= 1 or (infer_step - 1) % self.cached_step != 0)
+            # BUG: image deteriorates when n_gpu>3
+            # if run_locally or self.model_n + self.stride > 4:
+            for each in self.reformed_modules.values():
+                # if index in self.comm_index or self.model_n + self.stride > 4:
+                each.plugin.cache_sync(False)
+                # index += 1
 
-            if self.stride==1:
-                run_locally = (infer_step-1)%self.stride == 0 and (infer_step-1)%self.cache_step == 0
-                # BUG: image deteriorates when n_gpu>3
-                if run_locally or self.model_n+self.stride>4:
-                    for each in self.reformed_modules.values():
-                        if index in self.comm_index or self.model_n+self.stride>4:
-                            each.plugin.cache_sync(False)
-                        index += 1
+            if infer_step >= self.warm_up and self.time_shift > 0:
+                args = list(arg for arg in args)
+                timestep = self.pipeline.scheduler.timesteps[infer_step - self.time_shift]
+                ts_len = len(self.pipeline.scheduler.timesteps)
+                timestep = (ts_len - timestep) / ts_len
+                normalized = timestep.item()
+                if self.pipeline.do_classifier_free_guidance and self.pipeline._cfg_truncation is not None and float(self.pipeline._cfg_truncation) <= 1 and normalized > self.pipeline._cfg_truncation:
+                    pass
+                elif self.pipeline.do_classifier_free_guidance:
+                    timestep = timestep.repeat(2)
+                args[1] = timestep
 
-                if self.time_shift > 0:
-                    if infer_step>=self.warm_up:
-                        args = list(arg for arg in args)
-                        timestep = self.pipeline.scheduler.timesteps[infer_step-self.time_shift]
-                        timestep = (1000 - timestep) / 1000
-                        normalized = timestep.item()
-                        if self.pipeline.do_classifier_free_guidance and self.pipeline._cfg_truncation is not None and float(self.pipeline._cfg_truncation) <= 1 and normalized > self.pipeline._cfg_truncation:
-                            pass
-                        elif self.pipeline.do_classifier_free_guidance:
-                            timestep = timestep.repeat(2)
-                        args[1] = timestep
+            sample = transformer.old_forward(*args, **kwargs)[0]
+            infer_step = self.reformed_modules[(0, 0)].plugin.infer_step
+            if infer_step >= self.warm_up and run_locally:
+                sample = torch.stack(sample)
+                dist.broadcast(sample, max(0, self.model_n - 1))
+                sample = torch.unbind(sample)
+            return sample,
 
-                sample = transformer.old_forward(*args, **kwargs)[0]
-                infer_step = self.reformed_modules[(0, 0)].plugin.infer_step
-                if infer_step>=self.warm_up and run_locally:
-                    sample = torch.stack(sample)
-                    dist.broadcast(sample, self.model_n-1)
-                    sample = torch.unbind(sample)
-                return sample,
-            else:
-                run_locally = (infer_step-1)%self.stride == self.stride - 1 and (infer_step-1)%self.cache_step == 0
-                # BUG: image deteriorates when n_gpu>3
-                if run_locally or self.model_n+self.stride>4:
-                    for each in self.reformed_modules.values():
-                        if index in self.comm_index or self.model_n+self.stride>4:
-                            each.plugin.cache_sync(False)
-                        index += 1
-
-                if infer_step>=self.warm_up:
-                    args = list(arg for arg in args)
-                    if dist.get_rank() < self.model_n and run_locally and infer_step< len(self.pipeline.scheduler.timesteps)-1:
-                        timestep = self.pipeline.scheduler.timesteps[infer_step+1-self.time_shift]
-                    else:
-                        timestep = self.pipeline.scheduler.timesteps[infer_step-self.time_shift]
-                    timestep = (1000 - timestep) / 1000
-                    normalized = timestep.item()
-                    if self.pipeline.do_classifier_free_guidance and self.pipeline._cfg_truncation is not None and float(self.pipeline._cfg_truncation) <= 1 and normalized > self.pipeline._cfg_truncation:
-                        pass
-                    elif self.pipeline.do_classifier_free_guidance:
-                        timestep = timestep.repeat(2)
-                    args[1] = timestep
-
-                sample = transformer.old_forward(*args, **kwargs)[0]
-                infer_step = self.reformed_modules[(0, 0)].plugin.infer_step
-                if infer_step>=self.warm_up and run_locally:
-                    sample = torch.stack(sample)
-                    dist.broadcast(sample, self.model_n)
-                    sample = torch.unbind(sample)
-                return sample,
         transformer.forward = transformer_forward
 
 

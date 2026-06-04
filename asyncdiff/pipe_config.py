@@ -747,39 +747,38 @@ ZImageTransformer2DModel(
   )
 )
 """
-        # NOTE: "feed_forward" target will severely degrade quality
-        # NOTE: "adaLN_modulation" can also be a target, but slightly degrades quality
-        # NOTE: probably can add attention/ffn norm1/norm2 as targets, but OOM on 16gb
-        def get(start, end):
-            targets = ["attention"]
-            out = []
-            for i in range(start, end):
-                for t in targets:
-                    out.append(getattr(transformer.layers[i], t))
-            return tuple(out)
-
         if n == 1:
-            return [
-                get(0, 30) + (transformer.all_final_layer,)
-            ]
+            return [(
+                *transformer.layers[0:30],
+                transformer.all_final_layer,
+            )]
         elif n == 2:
-            return [
-                get(0, 15),
-                get(15, 30) + (transformer.all_final_layer,)
-            ]
+            return [(
+                *transformer.layers[0:15],
+            ), (
+                *transformer.layers[15:30],
+                transformer.all_final_layer,
+            )]
         elif n == 3:
-            return [
-                get(0, 10),
-                get(10, 20),
-                get(20, 30) + (transformer.all_final_layer,)
-            ]
+            return [(
+                *transformer.layers[0:10],
+            ), (
+                *transformer.layers[10:20],
+            ), (
+                *transformer.layers[20:30],
+                transformer.all_final_layer,
+            )]
         elif n == 4:
-            return [
-                get(0, 8),
-                get(8, 16),
-                get(16, 24),
-                get(24, 30) + (transformer.all_final_layer,)
-            ]
+            return [(
+                *transformer.layers[0:8],
+            ), (
+                *transformer.layers[8:16],
+            ), (
+                *transformer.layers[16:24],
+            ), (
+                *transformer.layers[24:30],
+                transformer.all_final_layer,
+            )]
         else:
             raise NotImplementedError
     elif pipe_id in ["wani2v", "want2v"]: # TODO: might have to differentiate between 5b/14b, wan2.1/wan2.2
