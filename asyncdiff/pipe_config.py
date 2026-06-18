@@ -751,72 +751,253 @@ ZImageTransformer2DModel(
             return [(
                 *transformer.layers[0:30],
                 transformer.all_final_layer,
+                transformer.noise_refiner,
+                transformer.context_refiner,
             )]
         elif n == 2:
             return [(
-                *transformer.layers[0:15],
+                *transformer.layers[0:17],
             ), (
-                *transformer.layers[15:30],
+                *transformer.layers[17:30],
                 transformer.all_final_layer,
+                transformer.noise_refiner,
+                transformer.context_refiner,
             )]
         elif n == 3:
             return [(
-                *transformer.layers[0:10],
+                *transformer.layers[0:12],
             ), (
-                *transformer.layers[10:20],
-            ), (
-                *transformer.layers[20:30],
-                transformer.all_final_layer,
-            )]
-        elif n == 4:
-            return [(
-                *transformer.layers[0:8],
-            ), (
-                *transformer.layers[8:16],
-            ), (
-                *transformer.layers[16:24],
+                *transformer.layers[12:24],
             ), (
                 *transformer.layers[24:30],
                 transformer.all_final_layer,
-            )]
-        else:
-            raise NotImplementedError
-    elif pipe_id in ["wani2v", "want2v"]: # TODO: might have to differentiate between 5b/14b, wan2.1/wan2.2
-        if n == 1:
-            return [(
-                *transformer.blocks[0:39],
-                transformer.norm_out,
-                transformer.proj_out,
-            )]
-        elif n == 2:
-            return [(
-                *transformer.blocks[0:20],
-            ), (
-                *transformer.blocks[20:39],
-                transformer.norm_out,
-                transformer.proj_out,
-            )]
-        elif n == 3:
-            return [(
-                *transformer.blocks[0:14],
-            ), (
-                *transformer.blocks[14:28],
-            ), (
-                *transformer.blocks[28:39],
-                transformer.norm_out,
-                transformer.proj_out,
+                transformer.noise_refiner,
+                transformer.context_refiner,
             )]
         elif n == 4:
             return [(
-                *transformer.blocks[0:10],
+                *transformer.layers[0:9],
             ), (
-                *transformer.blocks[10:20],
+                *transformer.layers[9:18],
             ), (
-                *transformer.blocks[20:30],
+                *transformer.layers[18:27],
             ), (
-                *transformer.blocks[30:39],
-                transformer.norm_out,
-                transformer.proj_out,
+                *transformer.layers[27:30],
+                transformer.all_final_layer,
+                transformer.noise_refiner,
+                transformer.context_refiner,
+            )]
+            """return [(
+                *tuple(
+                    module
+                    for i in range(0, 8)
+                    for module in (
+                        transformer.layers[i].attention,
+                    )
+                ),
+            ), (
+                *tuple(
+                    module
+                    for i in range(8, 16)
+                    for module in (
+                        transformer.layers[i].attention,
+                    )
+                ),
+            ), (
+                *tuple(
+                    module
+                    for i in range(16, 24)
+                    for module in (
+                        transformer.layers[i].attention,
+                    )
+                ),
+            ), (
+                transformer.all_final_layer,
+                *tuple(
+                    module
+                    for i in range(24, 30)
+                    for module in (
+                        transformer.layers[i].attention,
+                    )
+                ),
+            )]"""
+        else:
+            raise NotImplementedError
+    elif pipe_id in ["wani2v", "want2v"]: # TODO: might have to differentiate between 5b/14b, wan2.1/wan2.2
+        """
+WanTransformer3DModel(                                                                                       
+  (rope): WanRotaryPosEmbed()                                                                                
+  (patch_embedding): Conv3d(36, 5120, kernel_size=(1, 2, 2), stride=(1, 2, 2))                               
+  (condition_embedder): WanTimeTextImageEmbedding(                                                           
+    (timesteps_proj): Timesteps()                                                                            
+    (time_embedder): TimestepEmbedding(                                                                      
+      (linear_1): Linear(in_features=256, out_features=5120, bias=True)                                        
+      (act): SiLU()                                                                                          
+      (linear_2): Linear(in_features=5120, out_features=5120, bias=True)                                     
+    )                                                                                                        
+    (act_fn): SiLU()                                  
+    (time_proj): Linear(in_features=5120, out_features=30720, bias=True)                                       
+    (text_embedder): PixArtAlphaTextProjection(                                                              
+      (linear_1): Linear(in_features=4096, out_features=5120, bias=True)                                     
+      (act_1): GELU(approximate='tanh')                                                                      
+      (linear_2): Linear(in_features=5120, out_features=5120, bias=True)                                     
+    )
+  (image_embedder): WanImageEmbedding(              
+      (norm1): FP32LayerNorm((1280,), eps=1e-05, elementwise_affine=True)                                    
+      (ff): FeedForward(                                                                                     
+        (net): ModuleList(                            
+          (0): GELU(                                                                                         
+            (proj): Linear(in_features=1280, out_features=1280, bias=True)                                   
+          )                                                                                                  
+          (1): Dropout(p=0.0, inplace=False)          
+          (2): Linear(in_features=1280, out_features=5120, bias=True)                                        
+        )                                                                                                    
+      )                                               
+      (norm2): FP32LayerNorm((5120,), eps=1e-05, elementwise_affine=True)                                      
+    )                                                                                                        
+  )                                                                                                          
+  (blocks): ModuleList(                                                                                      
+    (0-39): 40 x WanTransformerBlock(                                                                        
+      (norm1): FP32LayerNorm((5120,), eps=1e-06, elementwise_affine=False)                                     
+      (attn1): WanAttention(                                                                                 
+        (to_q): Lanear(in_features=5120, out_features=5120, bias=True)                                       
+        (to_k): Linear(in_features=5120, out_features=5120, bias=True)                                       
+        (to_v): Lanear(in_features=5120, out_features=5120, bias=True)                                       
+        (to_out): ModuleList(                                                                                
+          (0): Linear(in_features=5120, out_features=5120, bias=True)                                        
+          (1): Dropout(p=0.0, inplace=False)                                                                   
+        )                                                                                                    
+        (norm_q): RMSNorm((5120,), eps=1e-06, elementwise_affine=True)                                         
+        (norm_k): RMSNorm((5120,), eps=1e-06, elementwise_affine=True)                                       
+      )                                                                                                        
+      (attn2): WanAttention(                                                                                 
+        (to_q): Linear(in_features=5120, out_features=5120, bias=True)                                       
+        (to_k): Linear(in_features=5120, out_features=5120, bias=True)                                       
+        (to_v): Linear(in_features=5120, out_features=5120, bias=True)                                       
+        (to_out): ModuleList(                                                                                  
+          (0): Linear(in_features=5120, out_features=5120, bias=True)                                        
+          (1): Dropout(p=0.0, inplace=False)                                                                 
+        )                                             
+        (norm_q): RMSNorm((5120,), eps=1e-06, elementwise_affine=True)                                       
+        (norm_k): RMSNorm((5120,), eps=1e-06, elementwise_affine=True)                                       
+        (add_k_proj): Linear(in_features=5120, out_features=5120, bias=True)                                 
+        (add_v_proj): Linear(in_features=5120, out_features=5120, bias=True)                                 
+        (norm_added_k): RMSNorm((5120,), eps=1e-06, elementwise_affine=True)                                 
+      )                                                                                                      
+      (norm2): FP32LayerNorm((5120,), eps=1e-06, elementwise_affine=True)                                    
+      (ffn): FeedForward(                                                                                    
+        (net): ModuleList(                                                                                     
+          (0): GELU(                                                                                         
+            (proj): Linear(in_features=5120, out_features=13824, bias=True)                                  
+          )                                                                                                  
+          (1): Dropout(p=0.0, inplace=False)          
+          (2): Linear(in_features=13824, out_features=5120, bias=True)                                         
+        )                                                                                                    
+      )                                                                                                      
+      (norm3): FP32LayerNorm((5120,), eps=1e-06, elementwise_affine=False)                                   
+    )                                                                                                        
+
+  (norm_out): FP32LayerNorm((5120,), eps=1e-06, elementwise_affine=False)                                    
+  (proj_out): Linear(in_features=5120, out_features=64, bias=True)                                           
+)  
+"""
+        if n == 1:
+            return [(
+                *tuple(
+                    module
+                    for i in range(0, 40)
+                    for module in (
+                        transformer.blocks[i].attn1,
+                        transformer.blocks[i].attn2,
+                    )
+                ),
+            )]
+        elif n == 2:
+            return [(
+                *tuple(
+                    module
+                    for i in range(0, 20)
+                    for module in (
+                        transformer.blocks[i].attn1,
+                        transformer.blocks[i].attn2,
+                    )
+                ),
+            ), (
+                *tuple(
+                    module
+                    for i in range(20, 40)
+                    for module in (
+                        transformer.blocks[i].attn1,
+                        transformer.blocks[i].attn2,
+                    )
+                ),
+            )]
+        elif n == 3:
+            return [(
+                *tuple(
+                    module
+                    for i in range(0, 13)
+                    for module in (
+                        transformer.blocks[i].attn1,
+                        transformer.blocks[i].attn2,
+                    )
+                ),
+            ), (
+                *tuple(
+                    module
+                    for i in range(13, 26)
+                    for module in (
+                        transformer.blocks[i].attn1,
+                        transformer.blocks[i].attn2,
+                    )
+                ),
+            ), (
+                *tuple(
+                    module
+                    for i in range(26, 40)
+                    for module in (
+                        transformer.blocks[i].attn1,
+                        transformer.blocks[i].attn2,
+                    )
+                ),
+            )]
+        elif n == 4:
+            return [(
+                *tuple(
+                    module
+                    for i in range(0, 10)
+                    for module in (
+                        transformer.blocks[i].attn1,
+                        transformer.blocks[i].attn2,
+                    )
+                ),
+            ), (
+                *tuple(
+                    module
+                    for i in range(10, 20)
+                    for module in (
+                        transformer.blocks[i].attn1,
+                        transformer.blocks[i].attn2,
+                    )
+                ),
+            ), (
+                *tuple(
+                    module
+                    for i in range(20, 30)
+                    for module in (
+                        transformer.blocks[i].attn1,
+                        transformer.blocks[i].attn2,
+                    )
+                ),
+            ), (
+                *tuple(
+                    module
+                    for i in range(30, 40)
+                    for module in (
+                        transformer.blocks[i].attn1,
+                        transformer.blocks[i].attn2,
+                    )
+                ),
             )]
         else:
             raise NotImplementedError
