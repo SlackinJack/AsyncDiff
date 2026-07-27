@@ -82,6 +82,8 @@ class AsyncDiff(object):
             assert self.model_n + self.stride - 1 == dist.get_world_size(), "[ERROR]: The strategy is not compatible with the number of devices. (model_n + stride - 1) should be equal to world_size."
         self.reformed_modules = {}
         self.reform_pipeline()
+        # step = 28 // self.model_n
+        # self.comm_index = [(i + 1) * step for i in range(self.model_n - 1)]
 
     def reset_state(self,warm_up=1):
         self.warm_up = warm_up
@@ -93,16 +95,19 @@ class AsyncDiff(object):
         ModulePlugin(module, model_i, self.stride, target_i, self.cached_step)
         self.reformed_modules[(model_i, module_id)] = module
 
-    def reform_unet(self):
-        unet = self.pipeline.unet
-        assert not hasattr(unet, 'old_forward'), "Unet already has old_forward attribute."
-        unet.old_forward = unet.forward
+    def reform_transformer(self):
+        transformer = self.pipeline.transformer
+        assert not hasattr(transformer, 'old_forward'), "transformer already has old_forward attribute."
+        transformer.old_forward = transformer.forward
 
-        def unet_forward(*args, **kwargs):
+        def transformer_forward(*args, **kwargs):
             infer_step = self.reformed_modules[(0, 0)].plugin.infer_step
+            # index = 1
             run_locally = (infer_step - 1) % self.stride == self.stride - 1 and (self.cached_step <= 1 or (infer_step - 1) % self.cached_step != 0)
             for each in self.reformed_modules.values():
+                # if index in self.comm_index:
                 each.plugin.cache_sync()
+                # index += 1
 
             if self.time_shift > 0 and self.shifted_steps > 0 and infer_step <= self.shifted_steps:
                 if self.ramped_time_shift:
@@ -110,17 +115,20 @@ class AsyncDiff(object):
                 else:
                     new_shift = self.time_shift
                 shift = max(0, infer_step - new_shift)
-                args = list(args)
-                args[1] = self.pipeline.scheduler.timesteps[shift]
+                device = kwargs["timestep"].device
+                dtype = kwargs["timestep"].dtype
+                timesteps = self.pipeline.scheduler.timesteps
+                timestep = timesteps[shift].item() / len(timesteps)
+                kwargs["timestep"] = torch.tensor(timestep, device=device, dtype=dtype).unsqueeze(0)
 
-            sample = unet.old_forward(*args, **kwargs)[0]
+            sample = transformer.old_forward(*args, **kwargs)[0]
 
             infer_step = self.reformed_modules[(0, 0)].plugin.infer_step
             if infer_step >= self.warm_up:
                 dist.broadcast(sample, max(0, self.model_n - 1))
             return sample,
 
-        unet.forward = unet_forward
+        transformer.forward = transformer_forward
 
 
     def reform_pipeline(self):
@@ -128,4 +136,4 @@ class AsyncDiff(object):
         for model_i, sub_model in enumerate(models):
             for module_id, module in enumerate(sub_model):
                 self.reform_module(module, module_id, model_i)
-        self.reform_unet()
+        self.reform_transformer()

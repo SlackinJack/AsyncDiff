@@ -2,6 +2,7 @@ import torch.distributed as dist
 import torch
 from .tools import ResultPicker
 from .pipe_config import splite_model
+from .utils import get_ramped_time_shift
 
 
 """########################################
@@ -12,10 +13,10 @@ NOTE: This backend is currently UNTESTED.
 
 
 class ModulePlugin(object):
-    def __init__(self, module, model_i, stride=1, run_mode=None, cached_step=1):
+    def __init__(self, module, model_i, stride=1, target_i=None, cached_step=1):
         self.model_i = model_i
         self.stride = stride
-        self.run_mode = run_mode
+        self.target_i = target_i
         self.cached_step = cached_step
         self.module = module
         self.module.plugin = self
@@ -39,7 +40,7 @@ class ModulePlugin(object):
         module.old_forward = module.forward
 
         def new_forward(*args, **kwargs):
-            run_locally = (self.run_mode == self.model_i) and ((self.infer_step - 1) % self.stride == self.stride - 1) and (self.cached_step <= 1 or (self.infer_step - 1) % self.cached_step != 0)
+            run_locally = (self.target_i == self.model_i) and ((self.infer_step - 1) % self.stride == self.stride - 1) and (self.cached_step <= 1 or (self.infer_step - 1) % self.cached_step != 0)
             if self.infer_step <= self.warmup_n:
                 if self.rank == 0 or self.cached_result is None:
                     result = module.old_forward(*args, **kwargs)
@@ -73,6 +74,7 @@ class AsyncDiff(object):
         self.time_shift = kwargs.get("time_shift", 0)
         self.shifted_steps = kwargs.get("shifted_steps", 0)
         self.cached_step = kwargs.get("cached_step", 1)
+        self.ramped_time_shift = kwargs.get("ramped_time_shift", False)
 
         # other
         # dist.init_process_group("nccl")
@@ -89,8 +91,8 @@ class AsyncDiff(object):
             each.plugin.init_state(warmup_n=warm_up)
 
     def reform_module(self, module, module_id, model_i):
-        run_mode = dist.get_rank() if dist.get_rank() < self.model_n else self.model_n - 1
-        ModulePlugin(module, model_i, self.stride, run_mode, self.cached_step)
+        target_i = dist.get_rank() if dist.get_rank() < self.model_n else self.model_n - 1
+        ModulePlugin(module, model_i, self.stride, target_i, self.cached_step)
         self.reformed_modules[(model_i, module_id)] = module
 
     def reform_transformer(self):
@@ -102,21 +104,24 @@ class AsyncDiff(object):
             infer_step = self.reformed_modules[(0, 0)].plugin.infer_step
             # index = 1
             run_locally = (infer_step - 1) % self.stride == self.stride - 1 and (self.cached_step <= 1 or (infer_step - 1) % self.cached_step != 0)
-            if run_locally:
-                for each in self.reformed_modules.values():
-                    # if index in self.comm_index:
-                    each.plugin.cache_sync()
-                    # index += 1
+            for each in self.reformed_modules.values():
+                # if index in self.comm_index:
+                each.plugin.cache_sync()
+                # index += 1
 
             if self.time_shift > 0 and self.shifted_steps > 0 and infer_step <= self.shifted_steps:
-                shift = max(0, infer_step - self.time_shift)
+                if self.ramped_time_shift:
+                    new_shift = get_ramped_time_shift(self.time_shift, self.shifted_steps, infer_step)
+                else:
+                    new_shift = self.time_shift
+                shift = max(0, infer_step - new_shift)
                 kwargs["timestep"] = torch.cat([self.pipeline.scheduler.timesteps[shift].unsqueeze(0),
                                                 self.pipeline.scheduler.timesteps[shift].unsqueeze(0)])
 
             sample = transformer.old_forward(*args, **kwargs)[0]
 
             infer_step = self.reformed_modules[(0, 0)].plugin.infer_step
-            if infer_step >= self.warm_up and run_locally:
+            if infer_step >= self.warm_up:
                 dist.broadcast(sample, max(0, self.model_n - 1))
             return sample,
 
