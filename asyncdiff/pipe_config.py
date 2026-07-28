@@ -812,7 +812,8 @@ FluxTransformer2DModel(
                         transformer.transformer_blocks[i].attn,
                     )
                 ),
-                # transformer.final_layer,
+                transformer.txt_in,
+                transformer.final_layer,
             )]
         elif n == 2:
             return [(
@@ -834,7 +835,8 @@ FluxTransformer2DModel(
                         transformer.transformer_blocks[i].attn,
                     )
                 ),
-                # transformer.final_layer,
+                transformer.txt_in,
+                transformer.final_layer,
             )]
         elif n == 3:
             return [(
@@ -865,7 +867,8 @@ FluxTransformer2DModel(
                         transformer.transformer_blocks[i].attn,
                     )
                 ),
-                # transformer.final_layer,
+                transformer.txt_in,
+                transformer.final_layer,
             )]
         elif n == 4:
             return [(
@@ -904,7 +907,8 @@ FluxTransformer2DModel(
                         transformer.transformer_blocks[i].attn,
                     )
                 ),
-                # transformer.final_layer,
+                transformer.txt_in,
+                transformer.final_layer,
             )]
         else:
             raise NotImplementedError
