@@ -483,811 +483,688 @@ def splite_model(pipe, pipe_id, n):
             raise NotImplementedError
     elif pipe_id in ["flux"]:
         """
-FluxTransformer2DModel(
-  (pos_embed): FluxPosEmbed()
-  (time_text_embed): CombinedTimestepGuidanceTextProjEmbeddings(
-    (time_proj): Timesteps()
-    (timestep_embedder): TimestepEmbedding(
-      (linear_1): Linear(in_features=256, out_features=3072, bias=True)
-      (act): SiLU()
-      (linear_2): Linear(in_features=3072, out_features=3072, bias=True)
-    )
-    (guidance_embedder): TimestepEmbedding(
-      (linear_1): Linear(in_features=256, out_features=3072, bias=True)
-      (act): SiLU()
-      (linear_2): Linear(in_features=3072, out_features=3072, bias=True)
-    )
-    (text_embedder): PixArtAlphaTextProjection(
-      (linear_1): Linear(in_features=768, out_features=3072, bias=True)
-      (act_1): SiLU()
-      (linear_2): Linear(in_features=3072, out_features=3072, bias=True)
-    )
-  )
-  (context_embedder): Linear(in_features=4096, out_features=3072, bias=True)
-  (x_embedder): Linear(in_features=64, out_features=3072, bias=True)
-  (transformer_blocks): ModuleList(
-    (0-18): 19 x FluxTransformerBlock(
-      (norm1): AdaLayerNormZero(
-        (silu): SiLU()
-        (linear): SDNQLinear(original_class=Linear forward_func=<function quantized_linear_forward_int8_matmul at 0x7a4d82a33920> sdnq_dequantizer=SDNQDequantizer(result_dtype=torch.float32, result_shape=torch.Size([18432, 3072]), original_shape=torch.Size([18432, 3072]), original_stride=(3072, 1), quantized_weight_shape=torch.Size([18432, 48, 64]), weights_dtype='int4', quantized_matmul_dtype='int8', group_size=64, svd_rank=16, svd_steps=4, use_quantized_matmul=True, re_quantize_for_matmul=True, use_stochastic_rounding=False, layer_class_name='Linear', is_packed=True, is_unsigned=False, is_integer=True, is_integer_matmul=True))
-        (norm): LayerNorm((3072,), eps=1e-06, elementwise_affine=False)
-      )
-      (norm1_context): AdaLayerNormZero(
-        (silu): SiLU()
-        (linear): SDNQLinear(original_class=Linear forward_func=<function quantized_linear_forward_int8_matmul at 0x7a4d82a33920> sdnq_dequantizer=SDNQDequantizer(result_dtype=torch.float32, result_shape=torch.Size([18432, 3072]), original_shape=torch.Size([18432, 3072]), original_stride=(3072, 1), quantized_weight_shape=torch.Size([18432, 48, 64]), weights_dtype='int4', quantized_matmul_dtype='int8', group_size=64, svd_rank=16, svd_steps=4, use_quantized_matmul=True, re_quantize_for_matmul=True, use_stochastic_rounding=False, layer_class_name='Linear', is_packed=True, is_unsigned=False, is_integer=True, is_integer_matmul=True))
-        (norm): LayerNorm((3072,), eps=1e-06, elementwise_affine=False)
-      )
-      (attn): FluxAttention(
-        (norm_q): RMSNorm((128,), eps=1e-06, elementwise_affine=True)
-        (norm_k): RMSNorm((128,), eps=1e-06, elementwise_affine=True)
-        (to_q): SDNQLinear(original_class=Linear forward_func=<function quantized_linear_forward_int8_matmul at 0x7a4d82a33920> sdnq_dequantizer=SDNQDequantizer(result_dtype=torch.float32, result_shape=torch.Size([3072, 3072]), original_shape=torch.Size([3072, 3072]), original_stride=(3072, 1), quantized_weight_shape=torch.Size([3072, 48, 64]), weights_dtype='int4', quantized_matmul_dtype='int8', group_size=64, svd_rank=16, svd_steps=4, use_quantized_matmul=True, re_quantize_for_matmul=True, use_stochastic_rounding=False, layer_class_name='Linear', is_packed=True, is_unsigned=False, is_integer=True, is_integer_matmul=True))
-        (to_k): SDNQLinear(original_class=Linear forward_func=<function quantized_linear_forward_int8_matmul at 0x7a4d82a33920> sdnq_dequantizer=SDNQDequantizer(result_dtype=torch.float32, result_shape=torch.Size([3072, 3072]), original_shape=torch.Size([3072, 3072]), original_stride=(3072, 1), quantized_weight_shape=torch.Size([3072, 48, 64]), weights_dtype='int4', quantized_matmul_dtype='int8', group_size=64, svd_rank=16, svd_steps=4, use_quantized_matmul=True, re_quantize_for_matmul=True, use_stochastic_rounding=False, layer_class_name='Linear', is_packed=True, is_unsigned=False, is_integer=True, is_integer_matmul=True))
-        (to_v): SDNQLinear(original_class=Linear forward_func=<function quantized_linear_forward_int8_matmul at 0x7a4d82a33920> sdnq_dequantizer=SDNQDequantizer(result_dtype=torch.float32, result_shape=torch.Size([3072, 3072]), original_shape=torch.Size([3072, 3072]), original_stride=(3072, 1), quantized_weight_shape=torch.Size([3072, 48, 64]), weights_dtype='int4', quantized_matmul_dtype='int8', group_size=64, svd_rank=16, svd_steps=4, use_quantized_matmul=True, re_quantize_for_matmul=True, use_stochastic_rounding=False, layer_class_name='Linear', is_packed=True, is_unsigned=False, is_integer=True, is_integer_matmul=True))
-        (to_out): ModuleList(
-          (0): SDNQLinear(original_class=Linear forward_func=<function quantized_linear_forward_int8_matmul at 0x7a4d82a33920> sdnq_dequantizer=SDNQDequantizer(result_dtype=torch.float32, result_shape=torch.Size([3072, 3072]), original_shape=torch.Size([3072, 3072]), original_stride=(3072, 1), quantized_weight_shape=torch.Size([3072, 48, 64]), weights_dtype='int4', quantized_matmul_dtype='int8', group_size=64, svd_rank=16, svd_steps=4, use_quantized_matmul=True, re_quantize_for_matmul=True, use_stochastic_rounding=False, layer_class_name='Linear', is_packed=True, is_unsigned=False, is_integer=True, is_integer_matmul=True))
-          (1): Dropout(p=0.0, inplace=False)
-        )
-        (norm_added_q): RMSNorm((128,), eps=1e-06, elementwise_affine=True)
-        (norm_added_k): RMSNorm((128,), eps=1e-06, elementwise_affine=True)
-        (add_q_proj): SDNQLinear(original_class=Linear forward_func=<function quantized_linear_forward_int8_matmul at 0x7a4d82a33920> sdnq_dequantizer=SDNQDequantizer(result_dtype=torch.float32, result_shape=torch.Size([3072, 3072]), original_shape=torch.Size([3072, 3072]), original_stride=(3072, 1), quantized_weight_shape=torch.Size([3072, 48, 64]), weights_dtype='int4', quantized_matmul_dtype='int8', group_size=64, svd_rank=16, svd_steps=4, use_quantized_matmul=True, re_quantize_for_matmul=True, use_stochastic_rounding=False, layer_class_name='Linear', is_packed=True, is_unsigned=False, is_integer=True, is_integer_matmul=True))
-        (add_k_proj): SDNQLinear(original_class=Linear forward_func=<function quantized_linear_forward_int8_matmul at 0x7a4d82a33920> sdnq_dequantizer=SDNQDequantizer(result_dtype=torch.float32, result_shape=torch.Size([3072, 3072]), original_shape=torch.Size([3072, 3072]), original_stride=(3072, 1), quantized_weight_shape=torch.Size([3072, 48, 64]), weights_dtype='int4', quantized_matmul_dtype='int8', group_size=64, svd_rank=16, svd_steps=4, use_quantized_matmul=True, re_quantize_for_matmul=True, use_stochastic_rounding=False, layer_class_name='Linear', is_packed=True, is_unsigned=False, is_integer=True, is_integer_matmul=True))
-        (add_v_proj): SDNQLinear(original_class=Linear forward_func=<function quantized_linear_forward_int8_matmul at 0x7a4d82a33920> sdnq_dequantizer=SDNQDequantizer(result_dtype=torch.float32, result_shape=torch.Size([3072, 3072]), original_shape=torch.Size([3072, 3072]), original_stride=(3072, 1), quantized_weight_shape=torch.Size([3072, 48, 64]), weights_dtype='int4', quantized_matmul_dtype='int8', group_size=64, svd_rank=16, svd_steps=4, use_quantized_matmul=True, re_quantize_for_matmul=True, use_stochastic_rounding=False, layer_class_name='Linear', is_packed=True, is_unsigned=False, is_integer=True, is_integer_matmul=True))
-        (to_add_out): SDNQLinear(original_class=Linear forward_func=<function quantized_linear_forward_int8_matmul at 0x7a4d82a33920> sdnq_dequantizer=SDNQDequantizer(result_dtype=torch.float32, result_shape=torch.Size([3072, 3072]), original_shape=torch.Size([3072, 3072]), original_stride=(3072, 1), quantized_weight_shape=torch.Size([3072, 48, 64]), weights_dtype='int4', quantized_matmul_dtype='int8', group_size=64, svd_rank=16, svd_steps=4, use_quantized_matmul=True, re_quantize_for_matmul=True, use_stochastic_rounding=False, layer_class_name='Linear', is_packed=True, is_unsigned=False, is_integer=True, is_integer_matmul=True))
-      )
-      (norm2): LayerNorm((3072,), eps=1e-06, elementwise_affine=False)
-      (ff): FeedForward(
-        (net): ModuleList(
-          (0): GELU(
-            (proj): SDNQLinear(original_class=Linear forward_func=<function quantized_linear_forward_int8_matmul at 0x7a4d82a33920> sdnq_dequantizer=SDNQDequantizer(result_dtype=torch.float32, result_shape=torch.Size([12288, 3072]), original_shape=torch.Size([12288, 3072]), original_stride=(3072, 1), quantized_weight_shape=torch.Size([12288, 48, 64]), weights_dtype='int4', quantized_matmul_dtype='int8', group_size=64, svd_rank=16, svd_steps=4, use_quantized_matmul=True, re_quantize_for_matmul=True, use_stochastic_rounding=False, layer_class_name='Linear', is_packed=True, is_unsigned=False, is_integer=True, is_integer_matmul=True))
-          )
-          (1): Dropout(p=0.0, inplace=False)
-          (2): SDNQLinear(original_class=Linear forward_func=<function quantized_linear_forward_int8_matmul at 0x7a4d82a33920> sdnq_dequantizer=SDNQDequantizer(result_dtype=torch.float32, result_shape=torch.Size([3072, 12288]), original_shape=torch.Size([3072, 12288]), original_stride=(12288, 1), quantized_weight_shape=torch.Size([3072, 192, 64]), weights_dtype='int4', quantized_matmul_dtype='int8', group_size=64, svd_rank=16, svd_steps=4, use_quantized_matmul=True, re_quantize_for_matmul=True, use_stochastic_rounding=False, layer_class_name='Linear', is_packed=True, is_unsigned=False, is_integer=True, is_integer_matmul=True))
-        )
-      )
-      (norm2_context): LayerNorm((3072,), eps=1e-06, elementwise_affine=False)
-      (ff_context): FeedForward(
-        (net): ModuleList(
-          (0): GELU(
-            (proj): SDNQLinear(original_class=Linear forward_func=<function quantized_linear_forward_int8_matmul at 0x7a4d82a33920> sdnq_dequantizer=SDNQDequantizer(result_dtype=torch.float32, result_shape=torch.Size([12288, 3072]), original_shape=torch.Size([12288, 3072]), original_stride=(3072, 1), quantized_weight_shape=torch.Size([12288, 48, 64]), weights_dtype='int4', quantized_matmul_dtype='int8', group_size=64, svd_rank=16, svd_steps=4, use_quantized_matmul=True, re_quantize_for_matmul=True, use_stochastic_rounding=False, layer_class_name='Linear', is_packed=True, is_unsigned=False, is_integer=True, is_integer_matmul=True))
-          )
-          (1): Dropout(p=0.0, inplace=False)
-          (2): SDNQLinear(original_class=Linear forward_func=<function quantized_linear_forward_int8_matmul at 0x7a4d82a33920> sdnq_dequantizer=SDNQDequantizer(result_dtype=torch.float32, result_shape=torch.Size([3072, 12288]), original_shape=torch.Size([3072, 12288]), original_stride=(12288, 1), quantized_weight_shape=torch.Size([3072, 192, 64]), weights_dtype='int4', quantized_matmul_dtype='int8', group_size=64, svd_rank=16, svd_steps=4, use_quantized_matmul=True, re_quantize_for_matmul=True, use_stochastic_rounding=False, layer_class_name='Linear', is_packed=True, is_unsigned=False, is_integer=True, is_integer_matmul=True))
-        )
-      )
-    )
-  )
-  (single_transformer_blocks): ModuleList(
-    (0): FluxSingleTransformerBlock(
-      (norm): AdaLayerNormZeroSingle(
-        (silu): SiLU()
-        (linear): Linear(in_features=3072, out_features=9216, bias=True)
-        (norm): LayerNorm((3072,), eps=1e-06, elementwise_affine=False)
-      )
-      (proj_mlp): SDNQLinear(original_class=Linear forward_func=<function quantized_linear_forward_int8_matmul at 0x7a4d82a33920> sdnq_dequantizer=SDNQDequantizer(result_dtype=torch.float32, result_shape=torch.Size([12288, 3072]), original_shape=torch.Size([12288, 3072]), original_stride=(3072, 1), quantized_weight_shape=torch.Size([12288, 48, 64]), weights_dtype='int4', quantized_matmul_dtype='int8', group_size=64, svd_rank=16, svd_steps=4, use_quantized_matmul=True, re_quantize_for_matmul=True, use_stochastic_rounding=False, layer_class_name='Linear', is_packed=True, is_unsigned=False, is_integer=True, is_integer_matmul=True))
-      (act_mlp): GELU(approximate='tanh')
-      (proj_out): SDNQLinear(original_class=Linear forward_func=<function quantized_linear_forward_int8_matmul at 0x7a4d82a33920> sdnq_dequantizer=SDNQDequantizer(result_dtype=torch.float32, result_shape=torch.Size([3072, 15360]), original_shape=torch.Size([3072, 15360]), original_stride=(15360, 1), quantized_weight_shape=torch.Size([3072, 240, 64]), weights_dtype='int4', quantized_matmul_dtype='int8', group_size=64, svd_rank=16, svd_steps=4, use_quantized_matmul=True, re_quantize_for_matmul=True, use_stochastic_rounding=False, layer_class_name='Linear', is_packed=True, is_unsigned=False, is_integer=True, is_integer_matmul=True))
-      (attn): FluxAttention(
-        (norm_q): RMSNorm((128,), eps=1e-06, elementwise_affine=True)
-        (norm_k): RMSNorm((128,), eps=1e-06, elementwise_affine=True)
-        (to_q): SDNQLinear(original_class=Linear forward_func=<function quantized_linear_forward_int8_matmul at 0x7a4d82a33920> sdnq_dequantizer=SDNQDequantizer(result_dtype=torch.float32, result_shape=torch.Size([3072, 3072]), original_shape=torch.Size([3072, 3072]), original_stride=(3072, 1), quantized_weight_shape=torch.Size([3072, 48, 64]), weights_dtype='int4', quantized_matmul_dtype='int8', group_size=64, svd_rank=16, svd_steps=4, use_quantized_matmul=True, re_quantize_for_matmul=True, use_stochastic_rounding=False, layer_class_name='Linear', is_packed=True, is_unsigned=False, is_integer=True, is_integer_matmul=True))
-        (to_k): SDNQLinear(original_class=Linear forward_func=<function quantized_linear_forward_int8_matmul at 0x7a4d82a33920> sdnq_dequantizer=SDNQDequantizer(result_dtype=torch.float32, result_shape=torch.Size([3072, 3072]), original_shape=torch.Size([3072, 3072]), original_stride=(3072, 1), quantized_weight_shape=torch.Size([3072, 48, 64]), weights_dtype='int4', quantized_matmul_dtype='int8', group_size=64, svd_rank=16, svd_steps=4, use_quantized_matmul=True, re_quantize_for_matmul=True, use_stochastic_rounding=False, layer_class_name='Linear', is_packed=True, is_unsigned=False, is_integer=True, is_integer_matmul=True))
-        (to_v): SDNQLinear(original_class=Linear forward_func=<function quantized_linear_forward_int8_matmul at 0x7a4d82a33920> sdnq_dequantizer=SDNQDequantizer(result_dtype=torch.float32, result_shape=torch.Size([3072, 3072]), original_shape=torch.Size([3072, 3072]), original_stride=(3072, 1), quantized_weight_shape=torch.Size([3072, 48, 64]), weights_dtype='int4', quantized_matmul_dtype='int8', group_size=64, svd_rank=16, svd_steps=4, use_quantized_matmul=True, re_quantize_for_matmul=True, use_stochastic_rounding=False, layer_class_name='Linear', is_packed=True, is_unsigned=False, is_integer=True, is_integer_matmul=True))
-      )
-    )
-    (1-37): 37 x FluxSingleTransformerBlock(
-      (norm): AdaLayerNormZeroSingle(
-        (silu): SiLU()
-        (linear): SDNQLinear(original_class=Linear forward_func=<function quantized_linear_forward_int8_matmul at 0x7a4d82a33920> sdnq_dequantizer=SDNQDequantizer(result_dtype=torch.float32, result_shape=torch.Size([9216, 3072]), original_shape=torch.Size([9216, 3072]), original_stride=(3072, 1), quantized_weight_shape=torch.Size([9216, 48, 64]), weights_dtype='int4', quantized_matmul_dtype='int8', group_size=64, svd_rank=16, svd_steps=4, use_quantized_matmul=True, re_quantize_for_matmul=True, use_stochastic_rounding=False, layer_class_name='Linear', is_packed=True, is_unsigned=False, is_integer=True, is_integer_matmul=True))
-        (norm): LayerNorm((3072,), eps=1e-06, elementwise_affine=False)
-      )
-      (proj_mlp): SDNQLinear(original_class=Linear forward_func=<function quantized_linear_forward_int8_matmul at 0x7a4d82a33920> sdnq_dequantizer=SDNQDequantizer(result_dtype=torch.float32, result_shape=torch.Size([12288, 3072]), original_shape=torch.Size([12288, 3072]), original_stride=(3072, 1), quantized_weight_shape=torch.Size([12288, 48, 64]), weights_dtype='int4', quantized_matmul_dtype='int8', group_size=64, svd_rank=16, svd_steps=4, use_quantized_matmul=True, re_quantize_for_matmul=True, use_stochastic_rounding=False, layer_class_name='Linear', is_packed=True, is_unsigned=False, is_integer=True, is_integer_matmul=True))
-      (act_mlp): GELU(approximate='tanh')
-      (proj_out): SDNQLinear(original_class=Linear forward_func=<function quantized_linear_forward_int8_matmul at 0x7a4d82a33920> sdnq_dequantizer=SDNQDequantizer(result_dtype=torch.float32, result_shape=torch.Size([3072, 15360]), original_shape=torch.Size([3072, 15360]), original_stride=(15360, 1), quantized_weight_shape=torch.Size([3072, 240, 64]), weights_dtype='int4', quantized_matmul_dtype='int8', group_size=64, svd_rank=16, svd_steps=4, use_quantized_matmul=True, re_quantize_for_matmul=True, use_stochastic_rounding=False, layer_class_name='Linear', is_packed=True, is_unsigned=False, is_integer=True, is_integer_matmul=True))
-      (attn): FluxAttention(
-        (norm_q): RMSNorm((128,), eps=1e-06, elementwise_affine=True)
-        (norm_k): RMSNorm((128,), eps=1e-06, elementwise_affine=True)
-        (to_q): SDNQLinear(original_class=Linear forward_func=<function quantized_linear_forward_int8_matmul at 0x7a4d82a33920> sdnq_dequantizer=SDNQDequantizer(result_dtype=torch.float32, result_shape=torch.Size([3072, 3072]), original_shape=torch.Size([3072, 3072]), original_stride=(3072, 1), quantized_weight_shape=torch.Size([3072, 48, 64]), weights_dtype='int4', quantized_matmul_dtype='int8', group_size=64, svd_rank=16, svd_steps=4, use_quantized_matmul=True, re_quantize_for_matmul=True, use_stochastic_rounding=False, layer_class_name='Linear', is_packed=True, is_unsigned=False, is_integer=True, is_integer_matmul=True))
-        (to_k): SDNQLinear(original_class=Linear forward_func=<function quantized_linear_forward_int8_matmul at 0x7a4d82a33920> sdnq_dequantizer=SDNQDequantizer(result_dtype=torch.float32, result_shape=torch.Size([3072, 3072]), original_shape=torch.Size([3072, 3072]), original_stride=(3072, 1), quantized_weight_shape=torch.Size([3072, 48, 64]), weights_dtype='int4', quantized_matmul_dtype='int8', group_size=64, svd_rank=16, svd_steps=4, use_quantized_matmul=True, re_quantize_for_matmul=True, use_stochastic_rounding=False, layer_class_name='Linear', is_packed=True, is_unsigned=False, is_integer=True, is_integer_matmul=True))
-        (to_v): SDNQLinear(original_class=Linear forward_func=<function quantized_linear_forward_int8_matmul at 0x7a4d82a33920> sdnq_dequantizer=SDNQDequantizer(result_dtype=torch.float32, result_shape=torch.Size([3072, 3072]), original_shape=torch.Size([3072, 3072]), original_stride=(3072, 1), quantized_weight_shape=torch.Size([3072, 48, 64]), weights_dtype='int4', quantized_matmul_dtype='int8', group_size=64, svd_rank=16, svd_steps=4, use_quantized_matmul=True, re_quantize_for_matmul=True, use_stochastic_rounding=False, layer_class_name='Linear', is_packed=True, is_unsigned=False, is_integer=True, is_integer_matmul=True))
-      )
-    )
-  )
-  (norm_out): AdaLayerNormContinuous(
-    (silu): SiLU()
-    (linear): Linear(in_features=3072, out_features=6144, bias=True)
-    (norm): LayerNorm((3072,), eps=1e-06, elementwise_affine=False)
-  )
-  (proj_out): Linear(in_features=3072, out_features=64, bias=True)
-)
-"""
+            FluxTransformer2DModel(
+              (pos_embed): FluxPosEmbed()
+              (time_text_embed): CombinedTimestepGuidanceTextProjEmbeddings(
+                (time_proj): Timesteps()
+                (timestep_embedder): TimestepEmbedding(
+                  (linear_1): Linear()
+                  (act): SiLU()
+                  (linear_2): Linear()
+                )
+                (guidance_embedder): TimestepEmbedding(
+                  (linear_1): Linear()
+                  (act): SiLU()
+                  (linear_2): Linear()
+                )
+                (text_embedder): PixArtAlphaTextProjection(
+                  (linear_1): Linear()
+                  (act_1): SiLU()
+                  (linear_2): Linear()
+                )
+              )
+              (context_embedder): Linear()
+              (x_embedder): Linear()
+              (transformer_blocks): ModuleList(
+                (0-18): 19 x FluxTransformerBlock(
+                  (norm1): AdaLayerNormZero(
+                    (silu): SiLU()
+                    (linear): Linear()
+                    (norm): LayerNorm()
+                  )
+                  (norm1_context): AdaLayerNormZero(
+                    (silu): SiLU()
+                    (linear): Linear()
+                    (norm): LayerNorm()
+                  )
+                  (attn): FluxAttention(
+                    (norm_q): RMSNorm()
+                    (norm_k): RMSNorm()
+                    (to_q): Linear()
+                    (to_k): Linear()
+                    (to_v): Linear()
+                    (to_out): ModuleList(
+                      (0): Linear()
+                      (1): Dropout()
+                    )
+                    (norm_added_q): RMSNorm()
+                    (norm_added_k): RMSNorm()
+                    (add_q_proj): Linear()
+                    (add_k_proj): Linear()
+                    (add_v_proj): Linear()
+                    (to_add_out): Linear()
+                  )
+                  (norm2): LayerNorm()
+                  (ff): FeedForward(
+                    (net): ModuleList(
+                      (0): GELU(
+                        (proj): Linear()
+                      )
+                      (1): Dropout()
+                      (2): Linear()
+                    )
+                  )
+                  (norm2_context): LayerNorm()
+                  (ff_context): FeedForward(
+                    (net): ModuleList(
+                      (0): GELU(
+                        (proj): Linear()
+                      )
+                      (1): Dropout()
+                      (2): Linear()
+                    )
+                  )
+                )
+              )
+              (single_transformer_blocks): ModuleList(
+                (0): FluxSingleTransformerBlock(
+                  (norm): AdaLayerNormZeroSingle(
+                    (silu): SiLU()
+                    (linear): Linear()
+                    (norm): LayerNorm()
+                  )
+                  (proj_mlp): Linear()
+                  (act_mlp): GELU()
+                  (proj_out): Linear()
+                  (attn): FluxAttention(
+                    (norm_q): RMSNorm()
+                    (norm_k): RMSNorm()
+                    (to_q): Linear()
+                    (to_k): Linear()
+                    (to_v): Linear()
+                  )
+                )
+                (1-37): 37 x FluxSingleTransformerBlock(
+                  (norm): AdaLayerNormZeroSingle(
+                    (silu): SiLU()
+                    (linear): Linear()
+                    (norm): LayerNorm()
+                  )
+                  (proj_mlp): Linear()
+                  (act_mlp): GELU()
+                  (proj_out): Linear()
+                  (attn): FluxAttention(
+                    (norm_q): RMSNorm()
+                    (norm_k): RMSNorm()
+                    (to_q): Linear()
+                    (to_k): Linear()
+                    (to_v): Linear()
+                  )
+                )
+              )
+              (norm_out): AdaLayerNormContinuous(
+                (silu): SiLU()
+                (linear): Linear()
+                (norm): LayerNorm()
+              )
+              (proj_out): Linear()
+            )
+        """
         if n == 1:
             return [(
+                *tuple(module for i in range(0, 19) for module in (
+                    transformer.transformer_blocks[i].attn,
+                )),
+                *tuple(module for i in range(0, 38) for module in (
+                    transformer.single_transformer_blocks[i].attn,
+                    transformer.single_transformer_blocks[i].proj_out,
+                )),
+                transformer.norm_out,
                 transformer.proj_out,
-                *tuple(
-                    module
-                    for i in range(0, 19)
-                    for module in (
-                        transformer.transformer_blocks[i].attn,
-                    )
-                ),
-                *tuple(
-                    module
-                    for i in range(0, 38)
-                    for module in (
-                        transformer.single_transformer_blocks[i].attn,
-                    )
-                ),
             )]
         elif n == 2:
             return [(
-                *tuple(
-                    module
-                    for i in range(0, 19)
-                    for module in (
-                        transformer.transformer_blocks[i].attn,
-                    )
-                ),
-                *tuple(
-                    module
-                    for i in range(0, 11)
-                    for module in (
-                        transformer.single_transformer_blocks[i].attn,
-                    )
-                ),
+                *tuple(module or i in range(0, 19) for module in (
+                    transformer.transformer_blocks[i].attn,
+                )),
+                *tuple(module for i in range(0, 11) for module in (
+                    transformer.single_transformer_blocks[i].attn,
+                    transformer.single_transformer_blocks[i].proj_out,
+                )),
             ), (
+                *tuple(module for i in range(11, 38) for module in (
+                    transformer.single_transformer_blocks[i].attn,
+                    transformer.single_transformer_blocks[i].proj_out,
+                )),
+                transformer.norm_out,
                 transformer.proj_out,
-                *tuple(
-                    module
-                    for i in range(11, 38)
-                    for module in (
-                        transformer.single_transformer_blocks[i].attn,
-                    )
-                ),
             )]
         elif n == 3:
             return [(
-                *tuple(
-                    module
-                    for i in range(0, 19)
-                    for module in (
-                        transformer.transformer_blocks[i].attn,
-                    )
-                ),
+                *tuple(module for i in range(0, 19) for module in (
+                    transformer.transformer_blocks[i].attn,
+                )),
             ), (
-                *tuple(
-                    module
-                    for i in range(0, 19)
-                    for module in (
-                        transformer.single_transformer_blocks[i].attn,
-                    )
-                ),
+                *tuple(module for i in range(0, 19) for module in (
+                    transformer.single_transformer_blocks[i].attn,
+                    transformer.single_transformer_blocks[i].proj_out,
+                )),
             ), (
+                *tuple(module for i in range(19, 38) for module in (
+                    transformer.single_transformer_blocks[i].attn,
+                    transformer.single_transformer_blocks[i].proj_out,
+                )),
+                transformer.norm_out,
                 transformer.proj_out,
-                *tuple(
-                    module
-                    for i in range(19, 38)
-                    for module in (
-                        transformer.single_transformer_blocks[i].attn,
-                    )
-                ),
             )]
         elif n == 4:
             return [(
-                *tuple(
-                    module
-                    for i in range(0, 19)
-                    for module in (
-                        transformer.transformer_blocks[i].attn,
-                    )
-                ),
+                *tuple(module for i in range(0, 19) for module in (
+                    transformer.transformer_blocks[i].attn,
+                )),
             ), (
-                *tuple(
-                    module
-                    for i in range(0, 16)
-                    for module in (
-                        transformer.single_transformer_blocks[i].attn,
-                    )
-                ),
+                *tuple(module for i in range(0, 16) for module in (
+                    transformer.single_transformer_blocks[i].attn,
+                    transformer.single_transformer_blocks[i].proj_out,
+                )),
             ), (
-                *tuple(
-                    module
-                    for i in range(16, 32)
-                    for module in (
-                        transformer.single_transformer_blocks[i].attn,
-                    )
-                ),
+                *tuple(module for i in range(16, 32) for module in (
+                    transformer.single_transformer_blocks[i].attn,
+                    transformer.single_transformer_blocks[i].proj_out,
+                )),
             ), (
+                *tuple(module for i in range(32, 38) for module in (
+                    transformer.single_transformer_blocks[i].attn,
+                    transformer.single_transformer_blocks[i].proj_out,
+                )),
+                transformer.norm_out,
                 transformer.proj_out,
-                *tuple(
-                    module
-                    for i in range(32, 38)
-                    for module in (
-                        transformer.single_transformer_blocks[i].attn,
-                    )
-                ),
             )]
         else:
             raise NotImplementedError
     elif pipe_id == "krea2":
         """
-        Krea2Transformer2DModel(                                                                             
-  (img_in): Linear(in_features=64, out_features=6144, bias=True)                                     
-  (time_embed): Krea2TimestepEmbedding(                                                              
-    (linear_1): Linear(in_features=256, out_features=6144, bias=True)                                
-    (linear_2): Linear(in_features=6144, out_features=6144, bias=True)                               
-  )                                                                                                  
-  (time_mod_proj): SDNQLinear(original_class=<class 'torch.nn.modules.linear.Linear'> forward_func=<function quantized_linear_forward at 0x7685c1f3a610> sdnq_dequantizer=SDNQDequantizer(result_dtype=torch.float16, result_shape=torch.Size([36864, 6144]), original_shape=torch.Size([36864, 6144]), original_stride=(6144, 1), quantized_weight_shape=torch.Size([36864, 96, 64]), weights_dtype='uint4', quantized_matmul_dtype='int8', hadamard_group_size=256, group_size=64, svd_rank=32, svd_steps=32, use_quantized_matmul=False, re_quantize_for_matmul=True, use_stochastic_rounding=False, layer_class_name='Linear', is_packed=True, is_unsigned=True, is_integer=True, is_integer_matmul=True))                     
-  (text_fusion): Krea2TextFusion(                                                                    
-    (layerwise_blocks): ModuleList(                                                                  
-      (0-1): 2 x Krea2TextFusionBlock(                                                               
-        (norm1): Krea2RMSNorm()                                                                      
-        (norm2): Krea2RMSNorm()                                                                      
-        (attn): Krea2Attention(                                                                      
-          (to_q): SDNQLinear(original_class=<class 'torch.nn.modules.linear.Linear'> forward_func=<function quantized_linear_forward at 0x7685c1f3a610> sdnq_dequantizer=SDNQDequantizer(result_dtype=torch.float16, result_shape=torch.Size([2560, 2560]), original_shape=torch.Size([2560, 2560]), original_stride=(2560, 1), quantized_weight_shape=torch.Size([2560, 40, 64]), weights_dtype='uint4', quantized_matmul_dtype='int8', hadamard_group_size=256, group_size=64, svd_rank=32, svd_steps=32, use_quantized_matmul=False, re_quantize_for_matmul=True, use_stochastic_rounding=False, layer_class_name='Linear', is_packed=True, is_unsigned=True, is_integer=True, is_integer_matmul=True))  
-        (to_k): SDNQLinear(original_class=<class 'torch.nn.modules.linear.Linear'> forward_func=<function quantized_linear_forward at 0x7685c1f3a610> sdnq_dequantizer=SDNQDequantizer(result_dtype=torch.float16, result_shape=torch.Size([2560, 2560]), original_shape=torch.Size([2560, 2560]), original_stride=(2560, 1), quantized_weight_shape=torch.Size([2560, 40, 64]), weights_dtype='uint4', quantized_matmul_dtype='int8', hadamard_group_size=256, group_size=64, svd_rank=32, svd_steps=32, use_quantized_matmul=False, re_quantize_for_matmul=True, use_stochastic_rounding=False, layer_class_name='Linear', is_packed=True, is_unsigned=True, is_integer=True, is_integer_matmul=True))                         
-          (to_v): SDNQLinear(original_class=<class 'torch.nn.modules.linear.Linear'> forward_func=<function quantized_linear_forward at 0x7685c1f3a610> sdnq_dequantizer=SDNQDequantizer(result_dtype=torch.float16, result_shape=torch.Size([2560, 2560]), original_shape=torch.Size([2560, 2560]), original_stride=(2560, 1), quantized_weight_shape=torch.Size([2560, 40, 64]), weights_dtype='uint4', quantized_matmul_dtype='int8', hadamard_group_size=256, group_size=64, svd_rank=32, svd_steps=32, use_quantized_matmul=False, re_quantize_for_matmul=True, use_stochastic_rounding=False, layer_class_name='Linear', is_packed=True, is_unsigned=True, is_integer=True, is_integer_matmul=True))                         
-          (to_gate): SDNQLinear(original_class=<class 'torch.nn.modules.linear.Linear'> forward_func=<function quantized_linear_forward at 0x7685c1f3a610> sdnq_dequantizer=SDNQDequantizer(result_dtype=torch.float16, result_shape=torch.Size([2560, 2560]), original_shape=torch.Size([2560, 2560]), original_stride=(2560, 1), quantized_weight_shape=torch.Size([2560, 40, 64]), weights_dtype='uint4', quantized_matmul_dtype='int8', hadamard_group_size=256, group_size=64, svd_rank=32, svd_steps=32, use_quantized_matmul=False, re_quantize_for_matmul=True, use_stochastic_rounding=False, layer_class_name='Linear', is_packed=True, is_unsigned=True, is_integer=True, is_integer_matmul=True))                      
-          (norm_q): Krea2RMSNorm()                                                                   
-          (norm_k): Krea2RMSNorm()                                                                   
-          (to_out): ModuleList(                                                                      
-            (0): SDNQLinear(original_class=<class 'torch.nn.modules.linear.Linear'> forward_func=<function quantized_linear_forward at 0x7685c1f3a610> sdnq_dequantizer=SDNQDequantizer(result_dtype=torch.float16, result_shape=torch.Size([2560, 2560]), original_shape=torch.Size([2560, 2560]), original_stride=(2560, 1), quantized_weight_shape=torch.Size([2560, 40, 64]), weights_dtype='uint4', quantized_matmul_dtype='int8', hadamard_group_size=256, group_size=64, svd_rank=32, svd_steps=32, use_quantized_matmul=False, re_quantize_for_matmul=True, use_stochastic_rounding=False, layer_class_name='Linear', is_packed=True, is_unsigned=True, is_integer=True, is_integer_matmul=True))                          
-            (1): Dropout(p=0.0, inplace=False)                                                       
-          )                                                                                          
-        )                                                                                            
-        (ff): Krea2SwiGLU(                                                                           
-          (gate): SDNQLinear(original_class=<class 'torch.nn.modules.linear.Linear'> forward_func=<function quantized_linear_forward at 0x7685c1f3a610> sdnq_dequantizer=SDNQDequantizer(result_dtype=torch.float16, result_shape=torch.Size([6912, 2560]), original_shape=torch.Size([6912, 2560]), original_stride=(2560, 1), quantized_weight_shape=torch.Size([6912, 40, 64]), weights_dtype='uint4', quantized_matmul_dtype='int8', hadamard_group_size=256, group_size=64, svd_rank=32, svd_steps=32, use_quantized_matmul=False, re_quantize_for_matmul=True, use_stochastic_rounding=False, layer_class_name='Linear', is_packed=True, is_unsigned=True, is_integer=True, is_integer_matmul=True))                         
-          (up): SDNQLinear(original_class=<class 'torch.nn.modules.linear.Linear'> forward_func=<function quantized_linear_forward at 0x7685c1f3a610> sdnq_dequantizer=SDNQDequantizer(result_dtype=torch.float16, result_shape=torch.Size([6912, 2560]), original_shape=torch.Size([6912, 2560]), original_stride=(2560, 1), quantized_weight_shape=torch.Size([6912, 40, 64]), weights_dtype='uint4', quantized_matmul_dtype='int8', hadamard_group_size=256, group_size=64, svd_rank=32, svd_steps=32, use_quantized_matmul=False, re_quantize_for_matmul=True, use_stochastic_rounding=False, layer_class_name='Linear', is_packed=True, is_unsigned=True, is_integer=True, is_integer_matmul=True))                           
-          (down): SDNQLinear(original_class=<class 'torch.nn.modules.linear.Linear'> forward_func=<function quantized_linear_forward at 0x7685c1f3a610> sdnq_dequantizer=SDNQDequantizer(result_dtype=torch.float16, result_shape=torch.Size([2560, 6912]), original_shape=torch.Size([2560, 6912]), original_stride=(6912, 1), quantized_weight_shape=torch.Size([2560, 108, 64]), weights_dtype='uint4', quantized_matmul_dtype='int8', hadamard_group_size=256, group_size=64, svd_rank=32, svd_steps=32, use_quantized_matmul=False, re_quantize_for_matmul=True, use_stochastic_rounding=False, layer_class_name='Linear', is_packed=True, is_unsigned=True, is_integer=True, is_integer_matmul=True))   
-        )                                                                                            
-      )                                                                                              
-    )                                                                                                
-    (projector): SDNQLinear(original_class=<class 'torch.nn.modules.linear.Linear'> forward_func=<function quantized_linear_forward at 0x7685c1f3a610> sdnq_dequantizer=SDNQDequantizer(result_dtype=torch.float16, result_shape=None, original_shape=torch.Size([1, 12]), original_stride=(12, 1), quantized_weight_shape=torch.Size([1, 12]), weights_dtype='uint4', quantized_matmul_dtype='int8', hadamard_group_size=256, group_size=-1, svd_rank=32, svd_steps=32, use_quantized_matmul=False, re_quantize_for_matmul=True, use_stochastic_rounding=False, layer_class_name='Linear', is_packed=True, is_unsigned=True, is_integer=True, is_integer_matmul=True))                                                            
-    (refiner_blocks): ModuleList(                                                                    
-      (0-1): 2 x Krea2TextFusionBlock(                                                               
-        (norm1): Krea2RMSNorm()                                                                      
-        (norm2): Krea2RMSNorm()                                                                      
-        (attn): Krea2Attention(                                                                      
-          (to_q): SDNQLinear(original_class=<class 'torch.nn.modules.linear.Linear'> forward_func=<function quantized_linear_forward at 0x7685c1f3a610> sdnq_dequantizer=SDNQDequantizer(result_dtype=torch.float16, result_shape=torch.Size([2560, 2560]), original_shape=torch.Size([2560, 2560]), original_stride=(2560, 1), quantized_weight_shape=torch.Size([2560, 40, 64]), weights_dtype='uint4', quantized_matmul_dtype='int8', hadamard_group_size=256, group_size=64, svd_rank=32, svd_steps=32, use_quantized_matmul=False, re_quantize_for_matmul=True, use_stochastic_rounding=False, layer_class_name='Linear', is_packed=True, is_unsigned=True, is_integer=True, is_integer_matmul=True))                         
-          (to_k): SDNQLinear(original_class=<class 'torch.nn.modules.linear.Linear'> forward_func=<function quantized_linear_forward at 0x7685c1f3a610> sdnq_dequantizer=SDNQDequantizer(result_dtype=torch.float16, result_shape=torch.Size([2560, 2560]), original_shape=torch.Size([2560, 2560]), original_stride=(2560, 1), quantized_weight_shape=torch.Size([2560, 40, 64]), weights_dtype='uint4', quantized_matmul_dtype='int8', hadamard_group_size=256, group_size=64, svd_rank=32, svd_steps=32, use_quantized_matmul=False, re_quantize_for_matmul=True, use_stochastic_rounding=False, layer_class_name='Linear', is_packed=True, is_unsigned=True, is_integer=True, is_integer_matmul=True))                         
-          (to_v): SDNQLinear(original_class=<class 'torch.nn.modules.linear.Linear'> forward_func=<function quantized_linear_forward at 0x7685c1f3a610> sdnq_dequantizer=SDNQDequantizer(result_dtype=torch.float16, result_shape=torch.Size([2560, 2560]), original_shape=torch.Size([2560, 2560]), original_stride=(2560, 1), quantized_weight_shape=torch.Size([2560, 40, 64]), weights_dtype='uint4', quantized_matmul_dtype='int8', hadamard_group_size=256, group_size=64, svd_rank=32, svd_steps=32, use_quantized_matmul=False, re_quantize_for_matmul=True, use_stochastic_rounding=False, layer_class_name='Linear', is_packed=True, is_unsigned=True, is_integer=True, is_integer_matmul=True))    
-        (to_gate): SDNQLinear(original_class=<class 'torch.nn.modules.linear.Linear'> forward_func=<function quantized_linear_forward at 0x7685c1f3a610> sdnq_dequantizer=SDNQDequantizer(result_dtype=torch.float16, result_shape=torch.Size([2560, 2560]), original_shape=torch.Size([2560, 2560]), original_stride=(2560, 1), quantized_weight_shape=torch.Size([2560, 40, 64]), weights_dtype='uint4', quantized_matmul_dtype='int8', hadamard_group_size=256, group_size=64, svd_rank=32, svd_steps=32, use_quantized_matmul=False, re_quantize_for_matmul=True, use_stochastic_rounding=False, layer_class_name='Linear', is_packed=True, is_unsigned=True, is_integer=True, is_integer_matmul=True))                      
-          (norm_q): Krea2RMSNorm()                                                                   
-          (norm_k): Krea2RMSNorm()                                                                   
-          (to_out): ModuleList(                                                                      
-            (0): SDNQLinear(original_class=<class 'torch.nn.modules.linear.Linear'> forward_func=<function quantized_linear_forward at 0x7685c1f3a610> sdnq_dequantizer=SDNQDequantizer(result_dtype=torch.float16, result_shape=torch.Size([2560, 2560]), original_shape=torch.Size([2560, 2560]), original_stride=(2560, 1), quantized_weight_shape=torch.Size([2560, 40, 64]), weights_dtype='uint4', quantized_matmul_dtype='int8', hadamard_group_size=256, group_size=64, svd_rank=32, svd_steps=32, use_quantized_matmul=False, re_quantize_for_matmul=True, use_stochastic_rounding=False, layer_class_name='Linear', is_packed=True, is_unsigned=True, is_integer=True, is_integer_matmul=True))                          
-            (1): Dropout(p=0.0, inplace=False)                                                       
-          )                                                                                          
-        )                                                                                            
-        (ff): Krea2SwiGLU(                                                                           
-          (gate): SDNQLinear(original_class=<class 'torch.nn.modules.linear.Linear'> forward_func=<function quantized_linear_forward at 0x7685c1f3a610> sdnq_dequantizer=SDNQDequantizer(result_dtype=torch.float16, result_shape=torch.Size([6912, 2560]), original_shape=torch.Size([6912, 2560]), original_stride=(2560, 1), quantized_weight_shape=torch.Size([6912, 40, 64]), weights_dtype='uint4', quantized_matmul_dtype='int8', hadamard_group_size=256, group_size=64, svd_rank=32, svd_steps=32, use_quantized_matmul=False, re_quantize_for_matmul=True, use_stochastic_rounding=False, layer_class_name='Linear', is_packed=True, is_unsigned=True, is_integer=True, is_integer_matmul=True))                         
-          (up): SDNQLinear(original_class=<class 'torch.nn.modules.linear.Linear'> forward_func=<function quantized_linear_forward at 0x7685c1f3a610> sdnq_dequantizer=SDNQDequantizer(result_dtype=torch.float16, result_shape=torch.Size([6912, 2560]), original_shape=torch.Size([6912, 2560]), original_stride=(2560, 1), quantized_weight_shape=torch.Size([6912, 40, 64]), weights_dtype='uint4', quantized_matmul_dtype='int8', hadamard_group_size=256, group_size=64, svd_rank=32, svd_steps=32, use_quantized_matmul=False, re_quantize_for_matmul=True, use_stochastic_rounding=False, layer_class_name='Linear', is_packed=True, is_unsigned=True, is_integer=True, is_integer_matmul=True))                           
-          (down): SDNQLinear(original_class=<class 'torch.nn.modules.linear.Linear'> forward_func=<function quantized_linear_forward at 0x7685c1f3a610> sdnq_dequantizer=SDNQDequantizer(result_dtype=torch.float16, result_shape=torch.Size([2560, 6912]), original_shape=torch.Size([2560, 6912]), original_stride=(6912, 1), quantized_weight_shape=torch.Size([2560, 108, 64]), weights_dtype='uint4', quantized_matmul_dtype='int8', hadamard_group_size=256, group_size=64, svd_rank=32, svd_steps=32, use_quantized_matmul=False, re_quantize_for_matmul=True, use_stochastic_rounding=False, layer_class_name='Linear', is_packed=True, is_unsigned=True, is_integer=True, is_integer_matmul=True)) 
-        )                                                                                            
-      )                                                                                              
-    )                                                                                                
-  )                                                                                                  
-  (txt_in): Krea2TextProjection(                                                                     
-    (norm): Krea2RMSNorm()                                                                           
-    (linear_1): Linear(in_features=2560, out_features=6144, bias=True)                               
-    (linear_2): Linear(in_features=6144, out_features=6144, bias=True)                               
-  )                                                                                                  
-  (rotary_emb): Krea2RotaryPosEmbed()                                                                
-  (transformer_blocks): ModuleList(                                                                  
-    (0-27): 28 x Krea2TransformerBlock(                                                              
-      (norm1): Krea2RMSNorm()                                                                        
-      (norm2): Krea2RMSNorm()                                                                        
-      (attn): Krea2Attention(                                                                        
-        (to_q): SDNQLinear(original_class=<class 'torch.nn.modules.linear.Linear'> forward_func=<function quantized_linear_forward at 0x7685c1f3a610> sdnq_dequantizer=SDNQDequantizer(result_dtype=torch.float16, result_shape=torch.Size([6144, 6144]), original_shape=torch.Size([6144, 6144]), original_stride=(6144, 1), quantized_weight_shape=torch.Size([6144, 96, 64]), weights_dtype='uint4', quantized_matmul_dtype='int8', hadamard_group_size=256, group_size=64, svd_rank=32, svd_steps=32, use_quantized_matmul=False, re_quantize_for_matmul=True, use_stochastic_rounding=False, layer_class_name='Linear', is_packed=True, is_unsigned=True, is_integer=True, is_integer_matmul=True))                           
-        (to_k): SDNQLinear(original_class=<class 'torch.nn.modules.linear.Linear'> forward_func=<function quantized_linear_forward at 0x7685c1f3a610> sdnq_dequantizer=SDNQDequantizer(result_dtype=torch.float16, result_shape=torch.Size([1536, 6144]), original_shape=torch.Size([1536, 6144]), original_stride=(6144, 1), quantized_weight_shape=torch.Size([1536, 96, 64]), weights_dtype='uint4', quantized_matmul_dtype='int8', hadamard_group_size=256, group_size=64, svd_rank=32, svd_steps=32, use_quantized_matmul=False, re_quantize_for_matmul=True, use_stochastic_rounding=False, layer_class_name='Linear', is_packed=True, is_unsigned=True, is_integer=True, is_integer_matmul=True))                           
-        (to_v): SDNQLinear(original_class=<class 'torch.nn.modules.linear.Linear'> forward_func=<function quantized_linear_forward at 0x7685c1f3a610> sdnq_dequantizer=SDNQDequantizer(result_dtype=torch.float16, result_shape=torch.Size([1536, 6144]), original_shape=torch.Size([1536, 6144]), original_stride=(6144, 1), quantized_weight_shape=torch.Size([1536, 96, 64]), weights_dtype='uint4', quantized_matmul_dtype='int8', hadamard_group_size=256, group_size=64, svd_rank=32, svd_steps=32, use_quantized_matmul=False, re_quantize_for_matmul=True, use_stochastic_rounding=False, layer_class_name='Linear', is_packed=True, is_unsigned=True, is_integer=True, is_integer_matmul=True))                           
-        (to_gate): SDNQLinear(original_class=<class 'torch.nn.modules.linear.Linear'> forward_func=<function quantized_linear_forward at 0x7685c1f3a610> sdnq_dequantizer=SDNQDequantizer(result_dtype=torch.float16, result_shape=torch.Size([6144, 6144]), original_shape=torch.Size([6144, 6144]), original_stride=(6144, 1), quantized_weight_shape=torch.Size([6144, 96, 64]), weights_dtype='uint4', quantized_matmul_dtype='int8', hadamard_group_size=256, group_size=64, svd_rank=32, svd_steps=32, use_quantized_matmul=False, re_quantize_for_matmul=True, use_stochastic_rounding=False, layer_class_name='Linear', is_packed=True, is_unsigned=True, is_integer=True, is_integer_matmul=True))  
-        (norm_q): Krea2RMSNorm()                                                                     
-        (norm_k): Krea2RMSNorm()                                                                     
-        (to_out): ModuleList(                                                                        
-          (0): SDNQLinear(original_class=<class 'torch.nn.modules.linear.Linear'> forward_func=<function quantized_linear_forward at 0x7685c1f3a610> sdnq_dequantizer=SDNQDequantizer(result_dtype=torch.float16, result_shape=torch.Size([6144, 6144]), original_shape=torch.Size([6144, 6144]), original_stride=(6144, 1), quantized_weight_shape=torch.Size([6144, 96, 64]), weights_dtype='uint4', quantized_matmul_dtype='int8', hadamard_group_size=256, group_size=64, svd_rank=32, svd_steps=32, use_quantized_matmul=False, re_quantize_for_matmul=True, use_stochastic_rounding=False, layer_class_name='Linear', is_packed=True, is_unsigned=True, is_integer=True, is_integer_matmul=True))                            
-          (1): Dropout(p=0.0, inplace=False)                                                         
-        )                                                                                            
-      )                                                                                              
-      (ff): Krea2SwiGLU(                                                                             
-        (gate): SDNQLinear(original_class=<class 'torch.nn.modules.linear.Linear'> forward_func=<function quantized_linear_forward at 0x7685c1f3a610> sdnq_dequantizer=SDNQDequantizer(result_dtype=torch.float16, result_shape=torch.Size([16384, 6144]), original_shape=torch.Size([16384, 6144]), original_stride=(6144, 1), quantized_weight_shape=torch.Size([16384, 96, 64]), weights_dtype='uint4', quantized_matmul_dtype='int8', hadamard_group_size=256, group_size=64, svd_rank=32, svd_steps=32, use_quantized_matmul=False, re_quantize_for_matmul=True, use_stochastic_rounding=False, layer_class_name='Linear', is_packed=True, is_unsigned=True, is_integer=True, is_integer_matmul=True))                        
-        (up): SDNQLinear(original_class=<class 'torch.nn.modules.linear.Linear'> forward_func=<function quantized_linear_forward at 0x7685c1f3a610> sdnq_dequantizer=SDNQDequantizer(result_dtype=torch.float16, result_shape=torch.Size([16384, 6144]), original_shape=torch.Size([16384, 6144]), original_stride=(6144, 1), quantized_weight_shape=torch.Size([16384, 96, 64]), weights_dtype='uint4', quantized_matmul_dtype='int8', hadamard_group_size=256, group_size=64, svd_rank=32, svd_steps=32, use_quantized_matmul=False, re_quantize_for_matmul=True, use_stochastic_rounding=False, layer_class_name='Linear', is_packed=True, is_unsigned=True, is_integer=True, is_integer_matmul=True))                          
-        (down): SDNQLinear(original_class=<class 'torch.nn.modules.linear.Linear'> forward_func=<function quantized_linear_forward at 0x7685c1f3a610> sdnq_dequantizer=SDNQDequantizer(result_dtype=torch.float16, result_shape=torch.Size([6144, 16384]), original_shape=torch.Size([6144, 16384]), original_stride=(16384, 1), quantized_weight_shape=torch.Size([6144, 256, 64]), weights_dtype='uint4', quantized_matmul_dtype='int8', hadamard_group_size=256, group_size=64, svd_rank=32, svd_steps=32, use_quantized_matmul=False, re_quantize_for_matmul=True, use_stochastic_rounding=False, layer_class_name='Linear', is_packed=True, is_unsigned=True, is_integer=True, is_integer_matmul=True))                       
-      )                                                                                              
-    )                                                                                                
-  )                                                                                                  
-  (final_layer): Krea2FinalLayer(                                                                    
-    (norm): Krea2RMSNorm()                                                                           
-    (linear): Linear(in_features=6144, out_features=64, bias=True)
-  )
-)
+            Krea2Transformer2DModel(
+              (img_in): Linear()
+              (time_embed): Krea2TimestepEmbedding(
+                (linear_1): Linear()
+                (linear_2): Linear()
+              )
+              (time_mod_proj): Linear()
+              (text_fusion): Krea2TextFusion(
+                (layerwise_blocks): ModuleList(
+                  (0-1): 2 x Krea2TextFusionBlock(
+                    (norm1): Krea2RMSNorm()
+                    (norm2): Krea2RMSNorm()
+                    (attn): Krea2Attention(
+                      (to_q): Linear()
+                    (to_k): Linear()
+                      (to_v): Linear()
+                      (to_gate): Linear()
+                      (norm_q): Krea2RMSNorm()
+                      (norm_k): Krea2RMSNorm()
+                      (to_out): ModuleList(
+                        (0): Linear()
+                        (1): Dropout()
+                      )
+                    )
+                    (ff): Krea2SwiGLU(
+                      (gate): Linear()
+                      (up): Linear()
+                      (down): Linear()
+                    )
+                  )
+                )
+                (projector): Linear()
+                (refiner_blocks): ModuleList(
+                  (0-1): 2 x Krea2TextFusionBlock(
+                    (norm1): Krea2RMSNorm()
+                    (norm2): Krea2RMSNorm()
+                    (attn): Krea2Attention(
+                      (to_q): Linear()
+                      (to_k): Linear()
+                      (to_v): Linear()
+                    (to_gate): Linear()
+                      (norm_q): Krea2RMSNorm()
+                      (norm_k): Krea2RMSNorm()
+                      (to_out): ModuleList(
+                        (0): Linear()
+                        (1): Dropout()
+                      )
+                    )
+                    (ff): Krea2SwiGLU(
+                      (gate): Linear()
+                      (up): Linear()
+                      (down): Linear()
+                    )
+                  )
+                )
+              )
+              (txt_in): Krea2TextProjection(
+                (norm): Krea2RMSNorm()
+                (linear_1): Linear()
+                (linear_2): Linear()
+              )
+              (rotary_emb): Krea2RotaryPosEmbed()
+              (transformer_blocks): ModuleList(
+                (0-27): 28 x Krea2TransformerBlock(
+                  (norm1): Krea2RMSNorm()
+                  (norm2): Krea2RMSNorm()
+                  (attn): Krea2Attention(
+                    (to_q): Linear()
+                    (to_k): Linear()
+                    (to_v): Linear()
+                    (to_gate): Linear()
+                    (norm_q): Krea2RMSNorm()
+                    (norm_k): Krea2RMSNorm()
+                    (to_out): ModuleList(
+                      (0): Linear()
+                      (1): Dropout()
+                    )
+                  )
+                  (ff): Krea2SwiGLU(
+                    (gate): Linear()
+                    (up): Linear()
+                    (down): Linear()
+                  )
+                )
+              )
+              (final_layer): Krea2FinalLayer(
+                (norm): Krea2RMSNorm()
+                (linear): Linear()
+              )
+            )
         """
         if n == 1:
             return [(
-                # *transformer.text_fusion.layerwise_blocks[0:2],
-                # *transformer.text_fusion.refiner_blocks[0:2],
-                *tuple(
-                    module
-                    for i in range(0, 28)
-                    for module in (
-                        transformer.transformer_blocks[i].attn,
-                    )
-                ),
-                transformer.txt_in,
+                *tuple(module for i in range(0, 2) for module in (
+                    transformer.text_fusion.layerwise_blocks[i].attn,
+                    transformer.text_fusion.refiner_blocks[i].attn,
+                )),
+                *tuple(module for i in range(0, 28) for module in (
+                    transformer.transformer_blocks[i].attn,
+                )),
                 transformer.final_layer,
             )]
         elif n == 2:
             return [(
-                # transformer.text_fusion.layerwise_blocks[0],
-                # *transformer.text_fusion.refiner_blocks[0:2],
-                *tuple(
-                    module
-                    for i in range(0, 14)
-                    for module in (
-                        transformer.transformer_blocks[i].attn,
-                    )
-                ),
+                *tuple(module for i in range(0, 2) for module in (
+                    transformer.text_fusion.layerwise_blocks[i].attn,
+                    transformer.text_fusion.refiner_blocks[i].attn,
+                )),
+                *tuple(module for i in range(0, 12) for module in (
+                    transformer.transformer_blocks[i].attn,
+                )),
             ), (
-                # transformer.text_fusion.layerwise_blocks[1],
-                *tuple(
-                    module
-                    for i in range(14, 28)
-                    for module in (
-                        transformer.transformer_blocks[i].attn,
-                    )
-                ),
-                transformer.txt_in,
+                *tuple(module for i in range(12, 28) for module in (
+                    transformer.transformer_blocks[i].attn,
+                )),
                 transformer.final_layer,
             )]
         elif n == 3:
             return [(
-                # transformer.text_fusion.layerwise_blocks[0],
-                # transformer.text_fusion.refiner_blocks[0],
-                *tuple(
-                    module
-                    for i in range(0, 9)
-                    for module in (
-                        transformer.transformer_blocks[i].attn,
-                    )
-                ),
+                *tuple(module for i in range(0, 2) for module in (
+                    transformer.text_fusion.layerwise_blocks[i].attn,
+                    transformer.text_fusion.refiner_blocks[i].attn,
+                )),
+                *tuple(module for i in range(0, 8) for module in (
+                    transformer.transformer_blocks[i].attn,
+                )),
             ), (
-                # transformer.text_fusion.layerwise_blocks[1],
-                # transformer.text_fusion.refiner_blocks[1],
-                *tuple(
-                    module
-                    for i in range(9, 18)
-                    for module in (
-                        transformer.transformer_blocks[i].attn,
-                    )
-                ),
+                *tuple(module for i in range(8, 18) for module in (
+                    transformer.transformer_blocks[i].attn,
+                )),
             ), (
-                *tuple(
-                    module
-                    for i in range(18, 28)
-                    for module in (
-                        transformer.transformer_blocks[i].attn,
-                    )
-                ),
-                transformer.txt_in,
+                *tuple(module for i in range(18, 28) for module in (
+                    transformer.transformer_blocks[i].attn,
+                )),
                 transformer.final_layer,
             )]
         elif n == 4:
             return [(
-                # transformer.text_fusion.layerwise_blocks[0],
-                *tuple(
-                    module
-                    for i in range(0, 8)
-                    for module in (
-                        transformer.transformer_blocks[i].attn,
-                    )
-                ),
+                *tuple(module for i in range(0, 2) for module in (
+                    transformer.text_fusion.layerwise_blocks[i].attn,
+                    transformer.text_fusion.refiner_blocks[i].attn,
+                )),
+                *tuple(module for i in range(0, 6) for module in (
+                    transformer.transformer_blocks[i].attn,
+                )),
             ), (
-                # transformer.text_fusion.layerwise_blocks[1],
-                # transformer.text_fusion.refiner_blocks[0],
-                *tuple(
-                    module
-                    for i in range(8, 14)
-                    for module in (
-                        transformer.transformer_blocks[i].attn,
-                    )
-                ),
+                *tuple(module for i in range(6, 14) for module in (
+                    transformer.transformer_blocks[i].attn,
+                )),
             ), (
-                # transformer.text_fusion.refiner_blocks[1],
-                *tuple(
-                    module
-                    for i in range(14, 21)
-                    for module in (
-                        transformer.transformer_blocks[i].attn,
-                    )
-                ),
+                *tuple(module for i in range(14, 22) for module in (
+                    transformer.transformer_blocks[i].attn,
+                )),
             ), (
-                *tuple(
-                    module
-                    for i in range(21, 28)
-                    for module in (
-                        transformer.transformer_blocks[i].attn,
-                    )
-                ),
-                transformer.txt_in,
+                *tuple(module for i in range(22, 28) for module in (
+                    transformer.transformer_blocks[i].attn,
+                )),
                 transformer.final_layer,
             )]
         else:
             raise NotImplementedError
     elif pipe_id == "zimage":
         """
-ZImageTransformer2DModel(
-  (all_x_embedder): ModuleDict(
-    (2-1): Linear(in_features=64, out_features=3840, bias=True)
-  )
-  (all_final_layer): ModuleDict(
-    (2-1): FinalLayer(
-      (norm_final): LayerNorm((3840,), eps=1e-06, elementwise_affine=False)
-      (linear): Linear(in_features=3840, out_features=64, bias=True)
-      (adaLN_modulation): Sequential(
-        (0): SiLU()
-        (1): Linear(in_features=256, out_features=3840, bias=True)
-      )
-    )
-  )
-  (noise_refiner): ModuleList(
-    (0-1): 2 x ZImageTransformerBlock(
-      (attention): Attention(
-        (norm_q): RMSNorm()
-        (norm_k): RMSNorm()
-        (to_q): Linear(in_features=3840, out_features=3840, bias=False)
-        (to_k): Linear(in_features=3840, out_features=3840, bias=False)
-        (to_v): Linear(in_features=3840, out_features=3840, bias=False)
-        (to_out): ModuleList(
-          (0): Linear(in_features=3840, out_features=3840, bias=False)
-          (1): Dropout(p=0.0, inplace=False)
-        )
-      )
-      (feed_forward): FeedForward(
-        (w1): Linear(in_features=3840, out_features=10240, bias=False)
-        (w2): Linear(in_features=10240, out_features=3840, bias=False)
-        (w3): Linear(in_features=3840, out_features=10240, bias=False)
-      )
-      (attention_norm1): RMSNorm()
-      (ffn_norm1): RMSNorm()
-      (attention_norm2): RMSNorm()
-      (ffn_norm2): RMSNorm()
-      (adaLN_modulation): Sequential(
-        (0): Linear(in_features=256, out_features=15360, bias=True)
-      )
-    )
-  )
-  (context_refiner): ModuleList(
-    (0-1): 2 x ZImageTransformerBlock(
-      (attention): Attention(
-        (norm_q): RMSNorm()
-        (norm_k): RMSNorm()
-        (to_q): Linear(in_features=3840, out_features=3840, bias=False)
-        (to_k): Linear(in_features=3840, out_features=3840, bias=False)
-        (to_v): Linear(in_features=3840, out_features=3840, bias=False)
-        (to_out): ModuleList(
-          (0): Linear(in_features=3840, out_features=3840, bias=False)
-          (1): Dropout(p=0.0, inplace=False)
-        )
-      )
-      (feed_forward): FeedForward(
-        (w1): Linear(in_features=3840, out_features=10240, bias=False)
-        (w2): Linear(in_features=10240, out_features=3840, bias=False)
-        (w3): Linear(in_features=3840, out_features=10240, bias=False)
-      )
-      (attention_norm1): RMSNorm()
-      (ffn_norm1): RMSNorm()
-      (attention_norm2): RMSNorm()
-      (ffn_norm2): RMSNorm()
-    )
-  )
-  (t_embedder): TimestepEmbedder(
-    (mlp): Sequential(
-      (0): Linear(in_features=256, out_features=1024, bias=True)
-      (1): SiLU()
-      (2): Linear(in_features=1024, out_features=256, bias=True)
-    )
-  )
-  (cap_embedder): Sequential(
-    (0): RMSNorm()
-    (1): Linear(in_features=2560, out_features=3840, bias=True)
-  )
-  (layers): ModuleList(
-    (0-29): 30 x ZImageTransformerBlock(
-      (attention): Attention(
-        (norm_q): RMSNorm()
-        (norm_k): RMSNorm()
-        (to_q): Linear(in_features=3840, out_features=3840, bias=False)
-        (to_k): Linear(in_features=3840, out_features=3840, bias=False)
-        (to_v): Linear(in_features=3840, out_features=3840, bias=False)
-        (to_out): ModuleList(
-          (0): Linear(in_features=3840, out_features=3840, bias=False)
-          (1): Dropout(p=0.0, inplace=False)
-        )
-      )
-      (feed_forward): FeedForward(
-        (w1): Linear(in_features=3840, out_features=10240, bias=False)
-        (w2): Linear(in_features=10240, out_features=3840, bias=False)
-        (w3): Linear(in_features=3840, out_features=10240, bias=False)
-      )
-      (attention_norm1): RMSNorm()
-      (ffn_norm1): RMSNorm()
-      (attention_norm2): RMSNorm()
-      (ffn_norm2): RMSNorm()
-      (adaLN_modulation): Sequential(
-        (0): Linear(in_features=256, out_features=15360, bias=True)
-      )
-    )
-  )
-)
-"""
+            ZImageTransformer2DModel(
+              (all_x_embedder): ModuleDict(
+                (2-1): Linear()
+              )
+              (all_final_layer): ModuleDict(
+                (2-1): FinalLayer(
+                  (norm_final): LayerNorm()
+                  (linear): Linear()
+                  (adaLN_modulation): Sequential(
+                    (0): SiLU()
+                    (1): Linear()
+                  )
+                )
+              )
+              (noise_refiner): ModuleList(
+                (0-1): 2 x ZImageTransformerBlock(
+                  (attention): Attention(
+                    (norm_q): RMSNorm()
+                    (norm_k): RMSNorm()
+                    (to_q): Linear()
+                    (to_k): Linear()
+                    (to_v): Linear()
+                    (to_out): ModuleList(
+                      (0): Linear()
+                      (1): Dropout()
+                    )
+                  )
+                  (feed_forward): FeedForward(
+                    (w1): Linear()
+                    (w2): Linear()
+                    (w3): Linear()
+                  )
+                  (attention_norm1): RMSNorm()
+                  (ffn_norm1): RMSNorm()
+                  (attention_norm2): RMSNorm()
+                  (ffn_norm2): RMSNorm()
+                  (adaLN_modulation): Sequential(
+                    (0): Linear()
+                  )
+                )
+              )
+              (context_refiner): ModuleList(
+                (0-1): 2 x ZImageTransformerBlock(
+                  (attention): Attention(
+                    (norm_q): RMSNorm()
+                    (norm_k): RMSNorm()
+                    (to_q): Linear()
+                    (to_k): Linear()
+                    (to_v): Linear()
+                    (to_out): ModuleList(
+                      (0): Linear()
+                      (1): Dropout()
+                    )
+                  )
+                  (feed_forward): FeedForward(
+                    (w1): Linear()
+                    (w2): Linear()
+                    (w3): Linear()
+                  )
+                  (attention_norm1): RMSNorm()
+                  (ffn_norm1): RMSNorm()
+                  (attention_norm2): RMSNorm()
+                  (ffn_norm2): RMSNorm()
+                )
+              )
+              (t_embedder): TimestepEmbedder(
+                (mlp): Sequential(
+                  (0): Linear()
+                  (1): SiLU()
+                  (2): Linear()
+                )
+              )
+              (cap_embedder): Sequential(
+                (0): RMSNorm()
+                (1): Linear()
+              )
+              (layers): ModuleList(
+                (0-29): 30 x ZImageTransformerBlock(
+                  (attention): Attention(
+                    (norm_q): RMSNorm()
+                    (norm_k): RMSNorm()
+                    (to_q): Linear()
+                    (to_k): Linear()
+                    (to_v): Linear()
+                    (to_out): ModuleList(
+                      (0): Linear()
+                      (1): Dropout()
+                    )
+                  )
+                  (feed_forward): FeedForward(
+                    (w1): Linear()
+                    (w2): Linear()
+                    (w3): Linear()
+                  )
+                  (attention_norm1): RMSNorm()
+                  (ffn_norm1): RMSNorm()
+                  (attention_norm2): RMSNorm()
+                  (ffn_norm2): RMSNorm()
+                  (adaLN_modulation): Sequential(
+                    (0): Linear()
+                  )
+                )
+              )
+            )
+        """
         if n == 1:
             return [(
+                *tuple(module for i in range(0, 2) for module in (
+                    transformer.noise_refiner[i].attention,
+                    transformer.context_refiner[i].attention,
+                )),
+                *tuple(module for i in range(0, 30) for module in (
+                    transformer.layers[i].attention,
+                    transformer.layers[i].feed_forward,
+                )),
                 transformer.all_final_layer,
-                *tuple(
-                    module
-                    for i in range(0, 30)
-                    for module in (
-                        transformer.layers[i].attention,
-                    )
-                ),
             )]
         elif n == 2:
             return [(
-                *tuple(
-                    module
-                    for i in range(0, 15)
-                    for module in (
-                        transformer.layers[i].attention,
-                    )
-                ),
+                *tuple(module for i in range(0, 2) for module in (
+                    transformer.noise_refiner[i].attention,
+                    transformer.context_refiner[i].attention,
+                )),
+                *tuple(module for i in range(0, 14) for module in (
+                    transformer.layers[i].attention,
+                    transformer.layers[i].feed_forward,
+                )),
             ), (
+                *tuple(module for i in range(14, 30) for module in (
+                    transformer.layers[i].attention,
+                    transformer.layers[i].feed_forward,
+                )),
                 transformer.all_final_layer,
-                *tuple(
-                    module
-                    for i in range(15, 30)
-                    for module in (
-                        transformer.layers[i].attention,
-                    )
-                ),
             )]
         elif n == 3:
             return [(
-                *tuple(
-                    module
-                    for i in range(0, 10)
-                    for module in (
-                        transformer.layers[i].attention,
-                    )
-                ),
+                *tuple(module for i in range(0, 2) for module in (
+                    transformer.noise_refiner[i].attention,
+                    transformer.context_refiner[i].attention,
+                )),
+                *tuple(module for i in range(0, 9) for module in (
+                    transformer.layers[i].attention,
+                    transformer.layers[i].feed_forward,
+                )),
             ), (
-                *tuple(
-                    module
-                    for i in range(10, 20)
-                    for module in (
-                        transformer.layers[i].attention,
-                    )
-                ),
+                *tuple(module for i in range(9, 20) for module in (
+                    transformer.layers[i].attention,
+                    transformer.layers[i].feed_forward,
+                )),
             ), (
+                *tuple(module for i in range(20, 30) for module in (
+                    transformer.layers[i].attention,
+                    transformer.layers[i].feed_forward,
+                )),
                 transformer.all_final_layer,
-                *tuple(
-                    module
-                    for i in range(20, 30)
-                    for module in (
-                        transformer.layers[i].attention,
-                    )
-                ),
             )]
         elif n == 4:
             return [(
-                *tuple(
-                    module
-                    for i in range(0, 8)
-                    for module in (
-                        transformer.layers[i].attention,
-                    )
-                ),
+                *tuple(module for i in range(0, 2) for module in (
+                    transformer.noise_refiner[i].attention,
+                    transformer.context_refiner[i].attention,
+                )),
+                *tuple(module for i in range(0, 6) for module in (
+                    transformer.layers[i].attention,
+                    transformer.layers[i].feed_forward,
+                )),
             ), (
-                *tuple(
-                    module
-                    for i in range(8, 16)
-                    for module in (
-                        transformer.layers[i].attention,
-                    )
-                ),
+                *tuple(module for i in range(6, 14) for module in (
+                    transformer.layers[i].attention,
+                    transformer.layers[i].feed_forward,
+                )),
             ), (
-                *tuple(
-                    module
-                    for i in range(16, 24)
-                    for module in (
-                        transformer.layers[i].attention,
-                    )
-                ),
+                *tuple(module for i in range(14, 22) for module in (
+                    transformer.layers[i].attention,
+                    transformer.layers[i].feed_forward,
+                )),
             ), (
+                *tuple(module for i in range(22, 30) for module in (
+                    transformer.layers[i].attention,
+                    transformer.layers[i].feed_forward,
+                )),
                 transformer.all_final_layer,
-                *tuple(
-                    module
-                    for i in range(24, 30)
-                    for module in (
-                        transformer.layers[i].attention,
-                    )
-                ),
             )]
         else:
             raise NotImplementedError
     elif pipe_id in ["wani2v", "want2v"]: # TODO: might have to differentiate between 5b/14b, wan2.1/wan2.2
         """
-WanTransformer3DModel(                                                                                       
-  (rope): WanRotaryPosEmbed()                                                                                
-  (patch_embedding): Conv3d(36, 5120, kernel_size=(1, 2, 2), stride=(1, 2, 2))                               
-  (condition_embedder): WanTimeTextImageEmbedding(                                                           
-    (timesteps_proj): Timesteps()                                                                            
-    (time_embedder): TimestepEmbedding(                                                                      
-      (linear_1): Linear(in_features=256, out_features=5120, bias=True)                                        
-      (act): SiLU()                                                                                          
-      (linear_2): Linear(in_features=5120, out_features=5120, bias=True)                                     
-    )                                                                                                        
-    (act_fn): SiLU()                                  
-    (time_proj): Linear(in_features=5120, out_features=30720, bias=True)                                       
-    (text_embedder): PixArtAlphaTextProjection(                                                              
-      (linear_1): Linear(in_features=4096, out_features=5120, bias=True)                                     
-      (act_1): GELU(approximate='tanh')                                                                      
-      (linear_2): Linear(in_features=5120, out_features=5120, bias=True)                                     
-    )
-  (image_embedder): WanImageEmbedding(              
-      (norm1): FP32LayerNorm((1280,), eps=1e-05, elementwise_affine=True)                                    
-      (ff): FeedForward(                                                                                     
-        (net): ModuleList(                            
-          (0): GELU(                                                                                         
-            (proj): Linear(in_features=1280, out_features=1280, bias=True)                                   
-          )                                                                                                  
-          (1): Dropout(p=0.0, inplace=False)          
-          (2): Linear(in_features=1280, out_features=5120, bias=True)                                        
-        )                                                                                                    
-      )                                               
-      (norm2): FP32LayerNorm((5120,), eps=1e-05, elementwise_affine=True)                                      
-    )                                                                                                        
-  )                                                                                                          
-  (blocks): ModuleList(                                                                                      
-    (0-39): 40 x WanTransformerBlock(                                                                        
-      (norm1): FP32LayerNorm((5120,), eps=1e-06, elementwise_affine=False)                                     
-      (attn1): WanAttention(                                                                                 
-        (to_q): Lanear(in_features=5120, out_features=5120, bias=True)                                       
-        (to_k): Linear(in_features=5120, out_features=5120, bias=True)                                       
-        (to_v): Lanear(in_features=5120, out_features=5120, bias=True)                                       
-        (to_out): ModuleList(                                                                                
-          (0): Linear(in_features=5120, out_features=5120, bias=True)                                        
-          (1): Dropout(p=0.0, inplace=False)                                                                   
-        )                                                                                                    
-        (norm_q): RMSNorm((5120,), eps=1e-06, elementwise_affine=True)                                         
-        (norm_k): RMSNorm((5120,), eps=1e-06, elementwise_affine=True)                                       
-      )                                                                                                        
-      (attn2): WanAttention(                                                                                 
-        (to_q): Linear(in_features=5120, out_features=5120, bias=True)                                       
-        (to_k): Linear(in_features=5120, out_features=5120, bias=True)                                       
-        (to_v): Linear(in_features=5120, out_features=5120, bias=True)                                       
-        (to_out): ModuleList(                                                                                  
-          (0): Linear(in_features=5120, out_features=5120, bias=True)                                        
-          (1): Dropout(p=0.0, inplace=False)                                                                 
-        )                                             
-        (norm_q): RMSNorm((5120,), eps=1e-06, elementwise_affine=True)                                       
-        (norm_k): RMSNorm((5120,), eps=1e-06, elementwise_affine=True)                                       
-        (add_k_proj): Linear(in_features=5120, out_features=5120, bias=True)                                 
-        (add_v_proj): Linear(in_features=5120, out_features=5120, bias=True)                                 
-        (norm_added_k): RMSNorm((5120,), eps=1e-06, elementwise_affine=True)                                 
-      )                                                                                                      
-      (norm2): FP32LayerNorm((5120,), eps=1e-06, elementwise_affine=True)                                    
-      (ffn): FeedForward(                                                                                    
-        (net): ModuleList(                                                                                     
-          (0): GELU(                                                                                         
-            (proj): Linear(in_features=5120, out_features=13824, bias=True)                                  
-          )                                                                                                  
-          (1): Dropout(p=0.0, inplace=False)          
-          (2): Linear(in_features=13824, out_features=5120, bias=True)                                         
-        )                                                                                                    
-      )                                                                                                      
-      (norm3): FP32LayerNorm((5120,), eps=1e-06, elementwise_affine=False)                                   
-    )                                                                                                        
+            WanTransformer3DModel(
+              (rope): WanRotaryPosEmbed()
+              (patch_embedding): Conv3d(3)
+              (condition_embedder): WanTimeTextImageEmbedding(
+                (timesteps_proj): Timesteps()
+                (time_embedder): TimestepEmbedding(
+                  (linear_1): Linear()
+                  (act): SiLU()
+                  (linear_2): Linear()
+                )
+                (act_fn): SiLU()
+                (time_proj): Linear()
+                (text_embedder): PixArtAlphaTextProjection(
+                  (linear_1): Linear()
+                  (act_1): GELU()
+                  (linear_2): Linear()
+                )
+              (image_embedder): WanImageEmbedding(
+                  (norm1): FP32LayerNorm()
+                  (ff): FeedForward(
+                    (net): ModuleList(
+                      (0): GELU(
+                        (proj): Linear()
+                      )
+                      (1): Dropout()
+                      (2): Linear()
+                    )
+                  )
+                  (norm2): FP32LayerNorm()
+                )
+              )
+              (blocks): ModuleList(
+                (0-39): 40 x WanTransformerBlock(
+                  (norm1): FP32LayerNorm()
+                  (attn1): WanAttention(
+                    (to_q): Lanear()
+                    (to_k): Linear()
+                    (to_v): Lanear()
+                    (to_out): ModuleList(
+                      (0): Linear()
+                      (1): Dropout()
+                    )
+                    (norm_q): RMSNorm()
+                    (norm_k): RMSNorm()
+                  )
+                  (attn2): WanAttention(
+                    (to_q): Linear()
+                    (to_k): Linear()
+                    (to_v): Linear()
+                    (to_out): ModuleList(
+                      (0): Linear()
+                      (1): Dropout()
+                    )
+                    (norm_q): RMSNorm()
+                    (norm_k): RMSNorm()
+                    (add_k_proj): Linear()
+                    (add_v_proj): Linear()
+                    (norm_added_k): RMSNorm()
+                  )
+                  (norm2): FP32LayerNorm()
+                  (ffn): FeedForward(
+                    (net): ModuleList(
+                      (0): GELU(
+                        (proj): Linear()
+                      )
+                      (1): Dropout()
+                      (2): Linear()
+                    )
+                  )
+                  (norm3): FP32LayerNorm()
+                )
 
-  (norm_out): FP32LayerNorm((5120,), eps=1e-06, elementwise_affine=False)                                    
-  (proj_out): Linear(in_features=5120, out_features=64, bias=True)                                           
-)  
-"""
+              (norm_out): FP32LayerNorm()
+              (proj_out): Linear()
+            )
+        """
         if n == 1:
             return [(
-                *tuple(
-                    module
-                    for i in range(0, 40)
-                    for module in (
-                        transformer.blocks[i].attn1,
-                        transformer.blocks[i].attn2,
-                    )
-                ),
+                *tuple(module for i in range(0, 40) for module in (
+                    transformer.blocks[i].attn1,
+                    transformer.blocks[i].attn2,
+                )),
+                transformer.norm_out,
+                transformer.proj_out,
             )]
         elif n == 2:
             return [(
-                *tuple(
-                    module
-                    for i in range(0, 20)
-                    for module in (
-                        transformer.blocks[i].attn1,
-                        transformer.blocks[i].attn2,
-                    )
-                ),
+                *tuple(module for i in range(0, 21) for module in (
+                    transformer.blocks[i].attn1,
+                    transformer.blocks[i].attn2,
+                )),
             ), (
-                *tuple(
-                    module
-                    for i in range(20, 40)
-                    for module in (
-                        transformer.blocks[i].attn1,
-                        transformer.blocks[i].attn2,
-                    )
-                ),
+                *tuple(module for i in range(21, 40) for module in (
+                    transformer.blocks[i].attn1,
+                    transformer.blocks[i].attn2,
+                )),
+                transformer.norm_out,
+                transformer.proj_out,
             )]
         elif n == 3:
             return [(
-                *tuple(
-                    module
-                    for i in range(0, 13)
-                    for module in (
-                        transformer.blocks[i].attn1,
-                        transformer.blocks[i].attn2,
-                    )
-                ),
+                *tuple(module for i in range(0, 14) for module in (
+                    transformer.blocks[i].attn1,
+                    transformer.blocks[i].attn2,
+                )),
             ), (
-                *tuple(
-                    module
-                    for i in range(13, 26)
-                    for module in (
-                        transformer.blocks[i].attn1,
-                        transformer.blocks[i].attn2,
-                    )
-                ),
+                *tuple(module for i in range(14, 28) for module in (
+                    transformer.blocks[i].attn1,
+                    transformer.blocks[i].attn2,
+                )),
             ), (
-                *tuple(
-                    module
-                    for i in range(26, 40)
-                    for module in (
-                        transformer.blocks[i].attn1,
-                        transformer.blocks[i].attn2,
-                    )
-                ),
+                *tuple(module for i in range(28, 40) for module in (
+                    transformer.blocks[i].attn1,
+                    transformer.blocks[i].attn2,
+                )),
+                transformer.norm_out,
+                transformer.proj_out,
             )]
         elif n == 4:
             return [(
-                *tuple(
-                    module
-                    for i in range(0, 10)
-                    for module in (
-                        transformer.blocks[i].attn1,
-                        transformer.blocks[i].attn2,
-                    )
-                ),
+                *tuple(module for i in range(0, 10) for module in (
+                    transformer.blocks[i].attn1,
+                    transformer.blocks[i].attn2,
+                )),
             ), (
-                *tuple(
-                    module
-                    for i in range(10, 20)
-                    for module in (
-                        transformer.blocks[i].attn1,
-                        transformer.blocks[i].attn2,
-                    )
-                ),
+                *tuple(module for i in range(10, 20) for module in (
+                    transformer.blocks[i].attn1,
+                    transformer.blocks[i].attn2,
+                )),
             ), (
-                *tuple(
-                    module
-                    for i in range(20, 30)
-                    for module in (
-                        transformer.blocks[i].attn1,
-                        transformer.blocks[i].attn2,
-                    )
-                ),
+                *tuple(module for i in range(20, 30) for module in (
+                    transformer.blocks[i].attn1,
+                    transformer.blocks[i].attn2,
+                )),
             ), (
-                *tuple(
-                    module
-                    for i in range(30, 40)
-                    for module in (
-                        transformer.blocks[i].attn1,
-                        transformer.blocks[i].attn2,
-                    )
-                ),
+                *tuple(module for i in range(30, 40) for module in (
+                    transformer.blocks[i].attn1,
+                    transformer.blocks[i].attn2,
+                )),
+                transformer.norm_out,
+                transformer.proj_out,
             )]
         else:
             raise NotImplementedError
