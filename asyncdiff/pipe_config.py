@@ -607,10 +607,7 @@ def splite_model(pipe, pipe_id, n):
                 )),
                 *tuple(module for i in range(0, 38) for module in (
                     transformer.single_transformer_blocks[i].attn,
-                    transformer.single_transformer_blocks[i].proj_out,
                 )),
-                transformer.norm_out,
-                transformer.proj_out,
             )]
         elif n == 2:
             return [(
@@ -619,15 +616,11 @@ def splite_model(pipe, pipe_id, n):
                 )),
                 *tuple(module for i in range(0, 11) for module in (
                     transformer.single_transformer_blocks[i].attn,
-                    transformer.single_transformer_blocks[i].proj_out,
                 )),
             ), (
                 *tuple(module for i in range(11, 38) for module in (
                     transformer.single_transformer_blocks[i].attn,
-                    transformer.single_transformer_blocks[i].proj_out,
                 )),
-                transformer.norm_out,
-                transformer.proj_out,
             )]
         elif n == 3:
             return [(
@@ -637,15 +630,11 @@ def splite_model(pipe, pipe_id, n):
             ), (
                 *tuple(module for i in range(0, 19) for module in (
                     transformer.single_transformer_blocks[i].attn,
-                    transformer.single_transformer_blocks[i].proj_out,
                 )),
             ), (
                 *tuple(module for i in range(19, 38) for module in (
                     transformer.single_transformer_blocks[i].attn,
-                    transformer.single_transformer_blocks[i].proj_out,
                 )),
-                transformer.norm_out,
-                transformer.proj_out,
             )]
         elif n == 4:
             return [(
@@ -655,20 +644,15 @@ def splite_model(pipe, pipe_id, n):
             ), (
                 *tuple(module for i in range(0, 16) for module in (
                     transformer.single_transformer_blocks[i].attn,
-                    transformer.single_transformer_blocks[i].proj_out,
                 )),
             ), (
                 *tuple(module for i in range(16, 32) for module in (
                     transformer.single_transformer_blocks[i].attn,
-                    transformer.single_transformer_blocks[i].proj_out,
                 )),
             ), (
                 *tuple(module for i in range(32, 38) for module in (
                     transformer.single_transformer_blocks[i].attn,
-                    transformer.single_transformer_blocks[i].proj_out,
                 )),
-                transformer.norm_out,
-                transformer.proj_out,
             )]
         else:
             raise NotImplementedError
@@ -774,7 +758,6 @@ def splite_model(pipe, pipe_id, n):
                 *tuple(module for i in range(0, 28) for module in (
                     transformer.transformer_blocks[i].attn,
                 )),
-                transformer.final_layer,
             )]
         elif n == 2:
             return [(
@@ -789,7 +772,6 @@ def splite_model(pipe, pipe_id, n):
                 *tuple(module for i in range(12, 28) for module in (
                     transformer.transformer_blocks[i].attn,
                 )),
-                transformer.final_layer,
             )]
         elif n == 3:
             return [(
@@ -808,7 +790,6 @@ def splite_model(pipe, pipe_id, n):
                 *tuple(module for i in range(18, 28) for module in (
                     transformer.transformer_blocks[i].attn,
                 )),
-                transformer.final_layer,
             )]
         elif n == 4:
             return [(
@@ -831,7 +812,6 @@ def splite_model(pipe, pipe_id, n):
                 *tuple(module for i in range(22, 28) for module in (
                     transformer.transformer_blocks[i].attn,
                 )),
-                transformer.final_layer,
             )]
         else:
             raise NotImplementedError
@@ -950,9 +930,7 @@ def splite_model(pipe, pipe_id, n):
                 )),
                 *tuple(module for i in range(0, 30) for module in (
                     transformer.layers[i].attention,
-                    transformer.layers[i].feed_forward,
                 )),
-                transformer.all_final_layer,
             )]
         elif n == 2:
             return [(
@@ -962,14 +940,11 @@ def splite_model(pipe, pipe_id, n):
                 )),
                 *tuple(module for i in range(0, 14) for module in (
                     transformer.layers[i].attention,
-                    transformer.layers[i].feed_forward,
                 )),
             ), (
                 *tuple(module for i in range(14, 30) for module in (
                     transformer.layers[i].attention,
-                    transformer.layers[i].feed_forward,
                 )),
-                transformer.all_final_layer,
             )]
         elif n == 3:
             return [(
@@ -979,19 +954,15 @@ def splite_model(pipe, pipe_id, n):
                 )),
                 *tuple(module for i in range(0, 9) for module in (
                     transformer.layers[i].attention,
-                    transformer.layers[i].feed_forward,
                 )),
             ), (
                 *tuple(module for i in range(9, 20) for module in (
                     transformer.layers[i].attention,
-                    transformer.layers[i].feed_forward,
                 )),
             ), (
                 *tuple(module for i in range(20, 30) for module in (
                     transformer.layers[i].attention,
-                    transformer.layers[i].feed_forward,
                 )),
-                transformer.all_final_layer,
             )]
         elif n == 4:
             return [(
@@ -1001,24 +972,19 @@ def splite_model(pipe, pipe_id, n):
                 )),
                 *tuple(module for i in range(0, 6) for module in (
                     transformer.layers[i].attention,
-                    transformer.layers[i].feed_forward,
                 )),
             ), (
                 *tuple(module for i in range(6, 14) for module in (
                     transformer.layers[i].attention,
-                    transformer.layers[i].feed_forward,
                 )),
             ), (
                 *tuple(module for i in range(14, 22) for module in (
                     transformer.layers[i].attention,
-                    transformer.layers[i].feed_forward,
                 )),
             ), (
                 *tuple(module for i in range(22, 30) for module in (
                     transformer.layers[i].attention,
-                    transformer.layers[i].feed_forward,
                 )),
-                transformer.all_final_layer,
             )]
         else:
             raise NotImplementedError
@@ -1106,8 +1072,6 @@ def splite_model(pipe, pipe_id, n):
                     transformer.blocks[i].attn1,
                     transformer.blocks[i].attn2,
                 )),
-                transformer.norm_out,
-                transformer.proj_out,
             )]
         elif n == 2:
             return [(
@@ -1120,8 +1084,6 @@ def splite_model(pipe, pipe_id, n):
                     transformer.blocks[i].attn1,
                     transformer.blocks[i].attn2,
                 )),
-                transformer.norm_out,
-                transformer.proj_out,
             )]
         elif n == 3:
             return [(
@@ -1139,8 +1101,6 @@ def splite_model(pipe, pipe_id, n):
                     transformer.blocks[i].attn1,
                     transformer.blocks[i].attn2,
                 )),
-                transformer.norm_out,
-                transformer.proj_out,
             )]
         elif n == 4:
             return [(
@@ -1163,8 +1123,6 @@ def splite_model(pipe, pipe_id, n):
                     transformer.blocks[i].attn1,
                     transformer.blocks[i].attn2,
                 )),
-                transformer.norm_out,
-                transformer.proj_out,
             )]
         else:
             raise NotImplementedError
