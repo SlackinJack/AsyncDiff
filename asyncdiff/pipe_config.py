@@ -752,66 +752,88 @@ def splite_model(pipe, pipe_id, n):
         if n == 1:
             return [(
                 *tuple(module for i in range(0, 2) for module in (
-                    transformer.text_fusion.layerwise_blocks[i].attn,
-                    transformer.text_fusion.refiner_blocks[i].attn,
+                    transformer.text_fusion.layerwise_blocks[i],
+                    transformer.text_fusion.refiner_blocks[i],
                 )),
+                transformer.text_fusion.projector,
+                transformer.txt_in,
                 *tuple(module for i in range(0, 28) for module in (
                     transformer.transformer_blocks[i].attn,
+                    transformer.transformer_blocks[i].ff,
                 )),
+                transformer.final_layer,
             )]
         elif n == 2:
             return [(
                 *tuple(module for i in range(0, 2) for module in (
-                    transformer.text_fusion.layerwise_blocks[i].attn,
-                    transformer.text_fusion.refiner_blocks[i].attn,
+                    transformer.text_fusion.layerwise_blocks[i],
+                    transformer.text_fusion.refiner_blocks[i],
                 )),
+                transformer.text_fusion.projector,
+                transformer.txt_in,
                 *tuple(module for i in range(0, 12) for module in (
                     transformer.transformer_blocks[i].attn,
+                    transformer.transformer_blocks[i].ff,
                 )),
             ), (
                 *tuple(module for i in range(12, 28) for module in (
                     transformer.transformer_blocks[i].attn,
+                    transformer.transformer_blocks[i].ff,
                 )),
+                transformer.final_layer,
             )]
         elif n == 3:
             return [(
                 *tuple(module for i in range(0, 2) for module in (
-                    transformer.text_fusion.layerwise_blocks[i].attn,
-                    transformer.text_fusion.refiner_blocks[i].attn,
+                    transformer.text_fusion.layerwise_blocks[i],
+                    transformer.text_fusion.refiner_blocks[i],
                 )),
+                transformer.text_fusion.projector,
+                transformer.txt_in,
                 *tuple(module for i in range(0, 8) for module in (
                     transformer.transformer_blocks[i].attn,
+                    transformer.transformer_blocks[i].ff,
                 )),
             ), (
                 *tuple(module for i in range(8, 18) for module in (
                     transformer.transformer_blocks[i].attn,
+                    transformer.transformer_blocks[i].ff,
                 )),
             ), (
                 *tuple(module for i in range(18, 28) for module in (
                     transformer.transformer_blocks[i].attn,
+                    transformer.transformer_blocks[i].ff,
                 )),
+                transformer.final_layer,
             )]
         elif n == 4:
             return [(
                 *tuple(module for i in range(0, 2) for module in (
-                    transformer.text_fusion.layerwise_blocks[i].attn,
-                    transformer.text_fusion.refiner_blocks[i].attn,
+                    transformer.text_fusion.layerwise_blocks[i],
+                    transformer.text_fusion.refiner_blocks[i],
                 )),
+                transformer.text_fusion.projector,
+                transformer.txt_in,
                 *tuple(module for i in range(0, 6) for module in (
                     transformer.transformer_blocks[i].attn,
+                    transformer.transformer_blocks[i].ff,
                 )),
             ), (
                 *tuple(module for i in range(6, 14) for module in (
                     transformer.transformer_blocks[i].attn,
+                    transformer.transformer_blocks[i].ff,
                 )),
             ), (
                 *tuple(module for i in range(14, 22) for module in (
                     transformer.transformer_blocks[i].attn,
+                    transformer.transformer_blocks[i].ff,
                 )),
             ), (
                 *tuple(module for i in range(22, 28) for module in (
                     transformer.transformer_blocks[i].attn,
+                    transformer.transformer_blocks[i].ff,
                 )),
+                transformer.final_layer,
             )]
         else:
             raise NotImplementedError
@@ -926,65 +948,83 @@ def splite_model(pipe, pipe_id, n):
             return [(
                 *tuple(module for i in range(0, 2) for module in (
                     transformer.noise_refiner[i].attention,
-                    transformer.context_refiner[i].attention,
+                    transformer.noise_refiner[i].feed_forward,
+                    transformer.context_refiner[i],
                 )),
                 *tuple(module for i in range(0, 30) for module in (
                     transformer.layers[i].attention,
+                    transformer.layers[i].feed_forward,
                 )),
+                transformer.all_final_layer,
             )]
         elif n == 2:
             return [(
                 *tuple(module for i in range(0, 2) for module in (
                     transformer.noise_refiner[i].attention,
-                    transformer.context_refiner[i].attention,
+                    transformer.noise_refiner[i].feed_forward,
+                    transformer.context_refiner[i],
                 )),
                 *tuple(module for i in range(0, 14) for module in (
                     transformer.layers[i].attention,
+                    transformer.layers[i].feed_forward,
                 )),
             ), (
                 *tuple(module for i in range(14, 30) for module in (
                     transformer.layers[i].attention,
+                    transformer.layers[i].feed_forward,
                 )),
+                transformer.all_final_layer,
             )]
         elif n == 3:
             return [(
                 *tuple(module for i in range(0, 2) for module in (
                     transformer.noise_refiner[i].attention,
-                    transformer.context_refiner[i].attention,
+                    transformer.noise_refiner[i].feed_forward,
+                    transformer.context_refiner[i],
                 )),
                 *tuple(module for i in range(0, 9) for module in (
                     transformer.layers[i].attention,
+                    transformer.layers[i].feed_forward,
                 )),
             ), (
                 *tuple(module for i in range(9, 20) for module in (
                     transformer.layers[i].attention,
+                    transformer.layers[i].feed_forward,
                 )),
             ), (
                 *tuple(module for i in range(20, 30) for module in (
                     transformer.layers[i].attention,
+                    transformer.layers[i].feed_forward,
                 )),
+                transformer.all_final_layer,
             )]
         elif n == 4:
             return [(
                 *tuple(module for i in range(0, 2) for module in (
                     transformer.noise_refiner[i].attention,
-                    transformer.context_refiner[i].attention,
+                    transformer.noise_refiner[i].feed_forward,
+                    transformer.context_refiner[i],
                 )),
                 *tuple(module for i in range(0, 6) for module in (
                     transformer.layers[i].attention,
+                    transformer.layers[i].feed_forward,
                 )),
             ), (
                 *tuple(module for i in range(6, 14) for module in (
                     transformer.layers[i].attention,
+                    transformer.layers[i].feed_forward,
                 )),
             ), (
                 *tuple(module for i in range(14, 22) for module in (
                     transformer.layers[i].attention,
+                    transformer.layers[i].feed_forward,
                 )),
             ), (
                 *tuple(module for i in range(22, 30) for module in (
                     transformer.layers[i].attention,
+                    transformer.layers[i].feed_forward,
                 )),
+                transformer.all_final_layer,
             )]
         else:
             raise NotImplementedError
