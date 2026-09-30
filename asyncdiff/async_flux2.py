@@ -13,7 +13,7 @@ from .utils import get_ramped_time_shift
 
 
 class ModulePlugin(object):
-    def __init__(self, module, model_i, stride=1, device_i=None):
+    def __init__(self, module, model_i, device_i, stride=1):
         self.model_i = model_i
         self.stride = stride
         self.device_i = device_i
@@ -92,7 +92,7 @@ class AsyncDiff(object):
         #     assert self.model_n + self.stride - 1 == dist.get_world_size(), "[ERROR]: The strategy is not compatible with the number of devices. (model_n + stride - 1) should be equal to world_size."
         self.reformed_modules = {}
         self.reform_pipeline()
-        # step = 30 // self.model_n
+        # step = 57 // self.model_n
         # self.comm_index = [(i + 1) * step for i in range(self.model_n - 1)]
 
     def reset_state(self, warm_up=1):
@@ -119,9 +119,8 @@ class AsyncDiff(object):
             # changed from original so that it always syncs cache
             # improves quality this way, but introduces more comm overhead
             # index = 1
-            # BUG: image deteriorates when n_gpu>3
             for each in self.reformed_modules.values():
-                # if index in self.comm_index or self.model_n + self.stride > 4:
+                # if index in self.comm_index:
                 each.plugin.cache_sync()
                 # index += 1
 
@@ -131,42 +130,20 @@ class AsyncDiff(object):
                 else:
                     new_shift = self.time_shift
                 shift = max(0, infer_step - new_shift)
-                args = list(arg for arg in args)
-                timestep = self.pipeline.scheduler.timesteps[shift]
-                ts_len = len(self.pipeline.scheduler.timesteps)
-                timestep = (ts_len - timestep) / ts_len
-                normalized = timestep.item()
-                if self.pipeline.do_classifier_free_guidance and self.pipeline._cfg_truncation is not None and float(self.pipeline._cfg_truncation) <= 1 and normalized > self.pipeline._cfg_truncation:
-                    pass
-                elif self.pipeline.do_classifier_free_guidance:
-                    timestep = timestep.repeat(2)
-                args[1] = timestep
+                device = kwargs["timestep"].device
+                dtype = kwargs["timestep"].dtype
+                timesteps = self.pipeline.scheduler.timesteps
+                timestep = timesteps[shift].item() / len(timesteps)
+                kwargs["timestep"] = torch.tensor(timestep, device=device, dtype=dtype).unsqueeze(0)
 
             sample = transformer.old_forward(*args, **kwargs)[0]
 
             infer_step = self.reformed_modules[(0, 0)].plugin.infer_step
             if infer_step >= self.warm_up:
-                sample = torch.stack(sample)
                 dist.broadcast(sample, max(0, self.model_n - 1))
-                sample = torch.unbind(sample)
             return sample,
 
         transformer.forward = transformer_forward
-
-
-    def reform_scheduler(self):
-        scheduler = self.pipeline.scheduler
-        assert not hasattr(scheduler, "old_step"), "scheduler already has old_step attribute"
-        scheduler.old_step = scheduler.step
-        def scheduler_step(*args, **kwargs):
-            def set_device(obj):
-                if torch.is_tensor(obj):    return obj.to(self.pipeline.device)
-                elif isinstance(obj, list): return [set_device(o) for o in obj]
-                return obj
-            args = tuple(set_device(arg) for arg in args)
-            kwargs = {k: set_device(v) for k, v in kwargs.items()}
-            return scheduler.old_step(*args, **kwargs)
-        scheduler.step = scheduler_step
 
 
     def reform_pipeline(self):
@@ -175,4 +152,3 @@ class AsyncDiff(object):
             for module_id, module in enumerate(sub_model):
                 self.reform_module(module, module_id, model_i)
         self.reform_transformer()
-        self.reform_scheduler()

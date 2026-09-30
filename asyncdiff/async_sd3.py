@@ -13,18 +13,20 @@ NOTE: This backend is currently UNTESTED.
 
 
 class ModulePlugin(object):
-    def __init__(self, module, model_i, stride=1, target_i=None, cached_step=1):
+    def __init__(self, module, model_i, stride=1, device_i=None):
         self.model_i = model_i
         self.stride = stride
-        self.target_i = target_i
-        self.cached_step = cached_step
+        self.device_i = device_i
         self.module = module
         self.module.plugin = self
         self.init_state()
         self.inject_forward()
         self.rank = dist.get_rank()
+        self.is_main_device = self.rank == 0
+        self.is_run_device = self.device_i == self.model_i
+        self.no_stride = self.stride <= 1
 
-    def init_state(self,warmup_n=1):
+    def init_state(self, warmup_n=1):
         self.warmup_n = warmup_n
         self.result_structure = None
         self.cached_result = None
@@ -40,18 +42,27 @@ class ModulePlugin(object):
         module.old_forward = module.forward
 
         def new_forward(*args, **kwargs):
-            run_locally = (self.target_i == self.model_i) and ((self.infer_step - 1) % self.stride == self.stride - 1) and (self.cached_step <= 1 or (self.infer_step - 1) % self.cached_step != 0)
+            # this step is a running step (skips every x step)
+            # this has been inverted from the original (prioritizes quality over speed here):
+            run_step = self.no_stride or (self.infer_step - 1) % self.stride != self.stride - 1
+
+            # inside warmup loop:
             if self.infer_step <= self.warmup_n:
-                if self.rank == 0 or self.cached_result is None:
+                # only run warmup inference on 0, then broadcast to others:
+                if self.is_main_device or self.cached_result is None:
                     result = module.old_forward(*args, **kwargs)
                     self.cached_result, self.result_structure = ResultPicker.dump(result)
                     dist.broadcast(self.cached_result, 0)
                 else:
                     dist.broadcast(self.cached_result, 0)
                     result = ResultPicker.load(self.cached_result, self.result_structure)
-            elif run_locally:
+
+            # outside warmup loop, but run on this device and step:
+            elif self.is_run_device and run_step:
                 result = module.old_forward(*args, **kwargs)
                 self.cached_result, self.result_structure = ResultPicker.dump(result)
+
+            # none of the above - load cached result:
             else:
                 result = ResultPicker.load(self.cached_result, self.result_structure)
             self.infer_step += 1
@@ -73,26 +84,29 @@ class AsyncDiff(object):
         self.warm_up = kwargs.get("warm_up", 1)
         self.time_shift = kwargs.get("time_shift", 0)
         self.shifted_steps = kwargs.get("shifted_steps", 0)
-        self.cached_step = kwargs.get("cached_step", 1)
         self.ramped_time_shift = kwargs.get("ramped_time_shift", False)
 
         # other
         # dist.init_process_group("nccl")
-        if not dist.get_rank():
-            assert self.model_n + self.stride - 1 == dist.get_world_size(), "[ERROR]: The strategy is not compatible with the number of devices. (model_n + stride - 1) should be equal to world_size."
+        # if not dist.get_rank():
+        #     assert self.model_n + self.stride - 1 == dist.get_world_size(), "[ERROR]: The strategy is not compatible with the number of devices. (model_n + stride - 1) should be equal to world_size."
         self.reformed_modules = {}
         self.reform_pipeline()
         # step = 24 // self.model_n
         # self.comm_index = [(i + 1) * step for i in range(self.model_n - 1)]
 
-    def reset_state(self,warm_up=1):
+    def reset_state(self, warm_up=1):
         self.warm_up = warm_up
         for each in self.reformed_modules.values():
             each.plugin.init_state(warmup_n=warm_up)
 
     def reform_module(self, module, module_id, model_i):
-        target_i = dist.get_rank() if dist.get_rank() < self.model_n else self.model_n - 1
-        ModulePlugin(module, model_i, self.stride, target_i, self.cached_step)
+        # set device id for submodel
+        # default is just the rank
+        # in the case there are more devices than model_n, then it is model_n - 1
+        # for best results, model_n should just be equal to number of devices
+        device_i = dist.get_rank() if dist.get_rank() < self.model_n else self.model_n - 1
+        ModulePlugin(module, model_i, device_i, self.stride)
         self.reformed_modules[(model_i, module_id)] = module
 
     def reform_transformer(self):
@@ -102,8 +116,9 @@ class AsyncDiff(object):
 
         def transformer_forward(*args, **kwargs):
             infer_step = self.reformed_modules[(0, 0)].plugin.infer_step
+            # changed from original so that it always syncs cache
+            # improves quality this way, but introduces more comm overhead
             # index = 1
-            run_locally = (infer_step - 1) % self.stride == self.stride - 1 and (self.cached_step <= 1 or (infer_step - 1) % self.cached_step != 0)
             for each in self.reformed_modules.values():
                 # if index in self.comm_index:
                 each.plugin.cache_sync()

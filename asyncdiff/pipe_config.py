@@ -1,5 +1,5 @@
 def splite_model(pipe, pipe_id, n):
-    if pipe_id in ["flux", "krea2", "sd3", "wani2v", "want2v", "zimage"]:
+    if pipe_id in ["flux1", "flux2d", "flux2k", "krea2", "sd3", "wani2v", "want2v", "zimage"]:
         transformer = pipe.transformer
     else:
         unet = pipe.unet
@@ -481,7 +481,7 @@ def splite_model(pipe, pipe_id, n):
             )]
         else:
             raise NotImplementedError
-    elif pipe_id in ["flux"]:
+    elif pipe_id in ["flux1"]:
         """
             FluxTransformer2DModel(
               (pos_embed): FluxPosEmbed()
@@ -604,15 +604,21 @@ def splite_model(pipe, pipe_id, n):
             return [(
                 *tuple(module for i in range(0, 19) for module in (
                     transformer.transformer_blocks[i].attn,
+                    transformer.transformer_blocks[i].ff,
+                    transformer.transformer_blocks[i].ff_context,
                 )),
                 *tuple(module for i in range(0, 38) for module in (
                     transformer.single_transformer_blocks[i].attn,
                 )),
+                transformer.proj_out,
+                transformer.norm_out,
             )]
         elif n == 2:
             return [(
                 *tuple(module or i in range(0, 19) for module in (
                     transformer.transformer_blocks[i].attn,
+                    transformer.transformer_blocks[i].ff,
+                    transformer.transformer_blocks[i].ff_context,
                 )),
                 *tuple(module for i in range(0, 11) for module in (
                     transformer.single_transformer_blocks[i].attn,
@@ -621,11 +627,15 @@ def splite_model(pipe, pipe_id, n):
                 *tuple(module for i in range(11, 38) for module in (
                     transformer.single_transformer_blocks[i].attn,
                 )),
+                transformer.proj_out,
+                transformer.norm_out,
             )]
         elif n == 3:
             return [(
                 *tuple(module for i in range(0, 19) for module in (
                     transformer.transformer_blocks[i].attn,
+                    transformer.transformer_blocks[i].ff,
+                    transformer.transformer_blocks[i].ff_context,
                 )),
             ), (
                 *tuple(module for i in range(0, 19) for module in (
@@ -635,11 +645,15 @@ def splite_model(pipe, pipe_id, n):
                 *tuple(module for i in range(19, 38) for module in (
                     transformer.single_transformer_blocks[i].attn,
                 )),
+                transformer.proj_out,
+                transformer.norm_out,
             )]
         elif n == 4:
             return [(
                 *tuple(module for i in range(0, 19) for module in (
                     transformer.transformer_blocks[i].attn,
+                    transformer.transformer_blocks[i].ff,
+                    transformer.transformer_blocks[i].ff_context,
                 )),
             ), (
                 *tuple(module for i in range(0, 16) for module in (
@@ -653,6 +667,278 @@ def splite_model(pipe, pipe_id, n):
                 *tuple(module for i in range(32, 38) for module in (
                     transformer.single_transformer_blocks[i].attn,
                 )),
+                transformer.proj_out,
+                transformer.norm_out,
+            )]
+        else:
+            raise NotImplementedError
+        """
+        Flux2Transformer2DModel(
+          (pos_embed): Flux2PosEmbed()
+          (time_guidance_embed): Flux2TimestepGuidanceEmbeddings(
+            (time_proj): Timesteps()
+            (timestep_embedder): TimestepEmbedding(
+              (linear_1): Linear
+              (act): SiLU()
+              (linear_2): Linear
+            )
+          )
+          (double_stream_modulation_img): Flux2Modulation(
+            (linear): Linear
+            (act_fn): SiLU()
+          )
+          (double_stream_modulation_txt): Flux2Modulation(
+            (linear): Linear
+            (act_fn): SiLU()
+          )
+          (single_stream_modulation): Flux2Modulation(
+            (linear): Linear
+            (act_fn): SiLU()
+          )
+          (x_embedder): Linear
+          (context_embedder): Linear
+          (transformer_blocks): ModuleList(
+            (0-7): 8 x Flux2TransformerBlock(
+              (norm1): LayerNorm
+              (norm1_context): LayerNorm
+              (attn): Flux2Attention(
+                (to_q): Linear
+                (to_k): Linear
+                (to_v): Linear
+                (norm_q): RMSNorm
+                (norm_k): RMSNorm
+                (to_out): ModuleList(
+                  (0): Linear
+                  (1): Dropout(p=0.0, inplace=False)
+                )
+                (norm_added_q): RMSNorm
+                (norm_added_k): RMSNorm
+                (add_q_proj): Linear
+                (add_k_proj): Linear
+                (add_v_proj): Linear
+                (to_add_out): Linear
+              )
+              (norm2): LayerNorm
+              (ff): Flux2FeedForward(
+                (linear_in): Linear
+                (act_fn): Flux2SwiGLU(
+                  (gate_fn): SiLU()
+                )
+                (linear_out): Linear
+              )
+              (norm2_context): LayerNorm
+              (ff_context): Flux2FeedForward(
+                (linear_in): Linear
+                (act_fn): Flux2SwiGLU(
+                  (gate_fn): SiLU()
+                )
+                (linear_out): Linear
+              )
+            )
+          )
+          (single_transformer_blocks): ModuleList(
+            (0): Flux2SingleTransformerBlock(
+              (norm): LayerNorm
+              (attn): Flux2ParallelSelfAttention(
+                (to_qkv_mlp_proj): Linear
+                (mlp_act_fn): Flux2SwiGLU(
+                  (gate_fn): SiLU()
+                )
+                (norm_q): RMSNorm
+                (norm_k): RMSNorm
+                (to_out): Linear
+              )
+            )
+            (1-2): 2 x Flux2SingleTransformerBlock(
+              (norm): LayerNorm
+              (attn): Flux2ParallelSelfAttention(
+                (to_qkv_mlp_proj): Linear
+                (mlp_act_fn): Flux2SwiGLU(
+                  (gate_fn): SiLU()
+                )
+                (norm_q): RMSNorm
+                (norm_k): RMSNorm
+                (to_out): Linear
+              )
+            )
+            (3): Flux2SingleTransformerBlock(
+              (norm): LayerNorm
+              (attn): Flux2ParallelSelfAttention(
+                (to_qkv_mlp_proj): Linear
+                (mlp_act_fn): Flux2SwiGLU(
+                  (gate_fn): SiLU()
+                )
+                (norm_q): RMSNorm
+                (norm_k): RMSNorm
+                (to_out): Linear
+              )
+            )
+            (4-5): 2 x Flux2SingleTransformerBlock(
+              (norm): LayerNorm
+              (attn): Flux2ParallelSelfAttention(
+                (to_qkv_mlp_proj): Linear
+                (mlp_act_fn): Flux2SwiGLU(
+                  (gate_fn): SiLU()
+                )
+                (norm_q): RMSNorm
+                (norm_k): RMSNorm
+                (to_out): Linear
+              )
+            )
+            (6-11): 6 x Flux2SingleTransformerBlock(
+              (norm): LayerNorm
+              (attn): Flux2ParallelSelfAttention(
+                (to_qkv_mlp_proj): Linear
+                (mlp_act_fn): Flux2SwiGLU(
+                  (gate_fn): SiLU()
+                )
+                (norm_q): RMSNorm
+                (norm_k): RMSNorm
+                (to_out): Linear
+              )
+            )
+            (12): Flux2SingleTransformerBlock(
+              (norm): LayerNorm
+              (attn): Flux2ParallelSelfAttention(
+                (to_qkv_mlp_proj): Linear
+                (mlp_act_fn): Flux2SwiGLU(
+                  (gate_fn): SiLU()
+                )
+                (norm_q): RMSNorm
+                (norm_k): RMSNorm
+                (to_out): Linear
+              )
+            )
+            (13-16): 4 x Flux2SingleTransformerBlock(
+              (norm): LayerNorm
+              (attn): Flux2ParallelSelfAttention(
+                (to_qkv_mlp_proj): Linear
+                (mlp_act_fn): Flux2SwiGLU(
+                  (gate_fn): SiLU()
+                )
+                (norm_q): RMSNorm
+                (norm_k): RMSNorm
+                (to_out): Linear
+              )
+            )
+            (17): Flux2SingleTransformerBlock(
+              (norm): LayerNorm
+              (attn): Flux2ParallelSelfAttention(
+                (to_qkv_mlp_proj): Linear
+                (mlp_act_fn): Flux2SwiGLU(
+                  (gate_fn): SiLU()
+                )
+                (norm_q): RMSNorm
+                (norm_k): RMSNorm
+                (to_out): Linear
+              )
+            )
+            (18): Flux2SingleTransformerBlock(
+              (norm): LayerNorm
+              (attn): Flux2ParallelSelfAttention(
+                (to_qkv_mlp_proj): Linear
+                (mlp_act_fn): Flux2SwiGLU(
+                  (gate_fn): SiLU()
+                )
+                (norm_q): RMSNorm
+                (norm_k): RMSNorm
+                (to_out): Linear
+              )
+            )
+            (19-23): 5 x Flux2SingleTransformerBlock(
+              (norm): LayerNorm
+              (attn): Flux2ParallelSelfAttention(
+                (to_qkv_mlp_proj): Linear
+                (mlp_act_fn): Flux2SwiGLU(
+                  (gate_fn): SiLU()
+                )
+                (norm_q): RMSNorm
+                (norm_k): RMSNorm
+                (to_out): Linear
+              )
+            )
+          )
+          (norm_out): AdaLayerNormContinuous(
+            (silu): SiLU()
+            (linear): Linear
+            (norm): LayerNorm
+          )
+          (proj_out): Linear
+        )
+        """
+    elif pipe_id in ["flux2d", "flux2k"]:
+        if n == 1:
+            return [(
+                *tuple(module for i in range(0, 8) for module in (
+                    transformer.transformer_blocks[i].attn,
+                    transformer.transformer_blocks[i].ff,
+                    transformer.transformer_blocks[i].ff_context,
+                )),
+                *tuple(module for i in range(0, 24) for module in (
+                    transformer.single_transformer_blocks[i].attn,
+                )),
+                transformer.proj_out,
+                transformer.norm_out,
+            )]
+        elif n == 2:
+            return [(
+                *tuple(module for i in range(0, 8) for module in (
+                    transformer.transformer_blocks[i].attn,
+                    transformer.transformer_blocks[i].ff,
+                    transformer.transformer_blocks[i].ff_context,
+                )),
+                *tuple(module for i in range(0, 9) for module in (
+                    transformer.single_transformer_blocks[i].attn,
+                )),
+            ), (
+                *tuple(module for i in range(9, 24) for module in (
+                    transformer.single_transformer_blocks[i].attn,
+                )),
+                transformer.proj_out,
+                transformer.norm_out,
+            )]
+        elif n == 3:
+            return [(
+                *tuple(module for i in range(0, 8) for module in (
+                    transformer.transformer_blocks[i].attn,
+                    transformer.transformer_blocks[i].ff,
+                    transformer.transformer_blocks[i].ff_context,
+                )),
+                *tuple(module for i in range(0, 3) for module in (
+                    transformer.single_transformer_blocks[i].attn,
+                )),
+            ), (
+                *tuple(module for i in range(3, 14) for module in (
+                    transformer.single_transformer_blocks[i].attn,
+                )),
+            ), (
+                *tuple(module for i in range(14, 24) for module in (
+                    transformer.single_transformer_blocks[i].attn,
+                )),
+                transformer.proj_out,
+                transformer.norm_out,
+            )]
+        elif n == 4:
+            return [(
+                *tuple(module for i in range(0, 8) for module in (
+                    transformer.transformer_blocks[i].attn,
+                    transformer.transformer_blocks[i].ff,
+                    transformer.transformer_blocks[i].ff_context,
+                )),
+            ), (
+                *tuple(module for i in range(0, 8) for module in (
+                    transformer.single_transformer_blocks[i].attn,
+                )),
+            ), (
+                *tuple(module for i in range(8, 16) for module in (
+                    transformer.single_transformer_blocks[i].attn,
+                )),
+            ), (
+                *tuple(module for i in range(16, 24) for module in (
+                    transformer.single_transformer_blocks[i].attn,
+                )),
+                transformer.proj_out,
+                transformer.norm_out,
             )]
         else:
             raise NotImplementedError
@@ -1002,29 +1288,29 @@ def splite_model(pipe, pipe_id, n):
             return [(
                 *tuple(module for i in range(0, 2) for module in (
                     transformer.noise_refiner[i].attention,
-                    transformer.noise_refiner[i].feed_forward,
-                    transformer.context_refiner[i],
+                    # transformer.noise_refiner[i].feed_forward,
+                    # transformer.context_refiner[i],
                 )),
                 *tuple(module for i in range(0, 6) for module in (
                     transformer.layers[i].attention,
-                    transformer.layers[i].feed_forward,
+                    # transformer.layers[i].feed_forward,
                 )),
             ), (
                 *tuple(module for i in range(6, 14) for module in (
                     transformer.layers[i].attention,
-                    transformer.layers[i].feed_forward,
+                    # transformer.layers[i].feed_forward,
                 )),
             ), (
                 *tuple(module for i in range(14, 22) for module in (
                     transformer.layers[i].attention,
-                    transformer.layers[i].feed_forward,
+                    # transformer.layers[i].feed_forward,
                 )),
             ), (
                 *tuple(module for i in range(22, 30) for module in (
                     transformer.layers[i].attention,
-                    transformer.layers[i].feed_forward,
+                    # transformer.layers[i].feed_forward,
                 )),
-                transformer.all_final_layer,
+                # transformer.all_final_layer,
             )]
         else:
             raise NotImplementedError
